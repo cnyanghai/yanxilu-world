@@ -1,6 +1,6 @@
 ---
 type: references
-project: yanxilu
+project: yanxilu-world
 last_scan: 2026-10-29
 ---
 
