@@ -15,7 +15,7 @@
 
 ## 代码结构
 
-- `world/`：小世界（WebGL，three.js 0.186 自带在 `vendor/three/`，importmap 引用，不打包不引框架不走 CDN）。`index.html` 外壳与 HUD，`world.js` 全部逻辑，`sample.js` 样例数据，`assets/` 是 Blender 烘焙的壳，`packs/<包>/<类>/<id>/` 一件资产一个目录加定义 JSON。按反引号键或 `?dev=1` 开「工坊」面板。
+- `world/`：小世界（WebGL，three.js 0.186 自带在 `world/vendor/three/`（字体在 `world/vendor/fonts/`，`world/` 自成一体，线上靠书架克隆里的一个 `world` 链接即可），importmap 引用，不打包不引框架不走 CDN）。`index.html` 外壳与 HUD，`world.js` 全部逻辑，`sample.js` 样例数据，`assets/` 是 Blender 烘焙的壳，`packs/<包>/<类>/<id>/` 一件资产一个目录加定义 JSON。按反引号键或 `?dev=1` 开「工坊」面板。
 - `world/data/`：九张表（objects、rooms、vis、props、items、economy、sound、tiles、characters）+ `presets/`（实体-组件预设）+ `schema/`（draft-07）。单位厘米整数。代码只读表：`world/data/tables.js`。`world/sim/grid.js` 格子与寻路，`world/render/{post,tiers}.js` 合成后期与硬件分档。
 - `room/`：CSS 3D 书房样机（早期），版本 2 第 3 步后归档。`studies/`：临摹练习。
 - `tools/`：`asset_import.py`（资产入库一条命令）、`asset_shrink.py`、`fal_image3d.py`（Rodin）、`paint_texture.py`、`tables_check.py`（Schema + 交叉引用 + 格子校验，**测试前置**）、`d2_decode.py`（暗黑 2 图像格式，仅本机研究）、`blender/`（`study_scene.py` 场景、`bake_study.py` 烘焙、`bake.sh` 一键，优先 Windows 侧 Blender 4.5 显卡）、`baba_mock.py`（本地模拟 Baba 静态与接口）、`tests/`（`world_test.py` 四景别三种光截图、`paint_verify.py`、`sim_test.mjs`）。

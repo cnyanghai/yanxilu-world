@@ -85,7 +85,7 @@ function hitBox(w, h, d, x, y, z, route, name, sub) {
   m.position.set(x, y, z); hotspot(m, route, name, sub); house.add(m); return m;
 }
 {
-  const draco = new DRACOLoader(); draco.setDecoderPath("../vendor/three/addons/libs/draco/gltf/");
+  const draco = new DRACOLoader(); draco.setDecoderPath("./vendor/three/addons/libs/draco/gltf/");
   const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
   const gltf = await loader.loadAsync("./assets/" + cfg.glb);
   const byGroup = { shell: [], furn: [] };
@@ -577,7 +577,7 @@ async function loadPresetFurniture() {
     const file = e.components.Model?.file, asset = file && T.props.assets[file];
     if (!asset || !/\.(glb|gltf\.json)$/.test(asset.model || "")) continue;   /* shell:xxx、procedural:xxx 不在这里 */
     try {
-      const dl = new DRACOLoader(); dl.setDecoderPath("../vendor/three/addons/libs/draco/gltf/");
+      const dl = new DRACOLoader(); dl.setDecoderPath("./vendor/three/addons/libs/draco/gltf/");
       const gl = new GLTFLoader(); gl.setDRACOLoader(dl);
       const gltf = await gl.loadAsync("./" + asset.model);
       const o = gltf.scene, t = e.components.Transform, obj = T.objects[e.components.Data?.object] || {}, fp = obj.footprint || {};

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="研习录版本 2：一个人的小世界。院子、书房、书墙、案头的文竹。烘焙的壳、长焦的镜头。">
 <meta name="theme-color" content="#DED4C0">
-<!-- 研习录 · 版本 2（world/）。独立页面，用自带的 three.js（vendor/three），不走任何 CDN。
+<!-- 研习录 · 版本 2（world/）。独立页面，用自带的 three.js（world/vendor/three），不走任何 CDN。
      结构：院子（总览）→ 间 → 家具 → 物，四个景别；URL 的 hash 对应景别，浏览器后退就是镜头拉远。
      这一稿是灰盒：建筑和家具是简单几何，书、盒、牌、文竹按数据程序化生成。
      材质只有四种：纸、木、墨、铜。光：夜读一盏灯，晴窗左窗来光，雨天青灰。 -->
@@ -13,9 +13,9 @@
 <!-- 服务器版这页的地址是 /world（没有尾斜杠），相对路径会解析到根上去；补一个 base 让 ./world.js、../vendor 都按 /world/ 算。
      GitHub Pages 上地址以 / 结尾，这段什么也不做。要放在 importmap 前面，importmap 也按 base 解析。 -->
 <script>(function(){var p=location.pathname;if(!/\/$/.test(p))document.write('<base href="'+p.replace(/[^\w\-\/.~%]/g,'')+'/">');})();</script>
-<link rel="stylesheet" href="../vendor/fonts/fonts.css">
+<link rel="stylesheet" href="./vendor/fonts/fonts.css">
 <script type="importmap">
-{ "imports": { "three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/" } }
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
 <style>
 :root{

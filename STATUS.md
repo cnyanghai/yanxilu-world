@@ -67,6 +67,7 @@ updated: 2026-11-02
 
 ## 日志
 
+- 2026-11-02 拆分后续：baba_mock 在没有书架首页与嵌入脚本时也能起（游戏仓库单独跑测试）；REFERENCES 的 frontmatter 改为本项目名；发现 world/ 用 ../vendor 引 three.js 与字体，拆分后线上会找不到，vendor/three 与 vendor/fonts 已挪进 world/vendor/，world/index.html、world.js、room/index.html 改为相对 world/ 的路径，回归通过；线上只需书架克隆里一个 world 链接；GitHub 建仓与推送、Baba 的 /world 链接仍留给用户
 - 2026-11-02 拆分成独立项目：从 yanxilu 本地克隆（全部历史），删版本 1 的 src / index.html / server / dist / reports / study / build.py / katex / pdfjs / pwa 与档案架测试，去掉 v1 标签；CLAUDE.md 与 README 重写；brain 登记、记忆目录（五条反馈记忆复制过来）、tools/out 本机产物搬来；GitHub 仓库建立与 Baba 的 /world 链接留给用户
 - 2026-11-02 用户要求拆成两个对话项目；盘点结论：版本 1 与版本 2 代码互不引用可干净拆开，分配表与四个决定已交用户，未动手。tools/out 下的回归截图是测试产物不入库
 - 2026-11-01 排练阶段四：拆野蛮人状态机（65 态 440 动画 14 类手持物 4225 转移淡接 0.2）、时间线（278 条 30 帧 8 种事件，声音 618 脚印 146 释放点 31）、宝箱门三态；合成预制体把三档部件 21 件拼成三个人本机渲白天夜晚；写 characters.json 第九张表 + Schema（骨架 ≤ 80、部件三档、14 状态、6 手持物、绑定规则、转移默认 + 例外、时间线事件五种）并登记 tables.js；objects 的门盒牌书三态加 loop / crossfade，transitions any；PIPELINE.md 生产流程 1.0 草案七节；D2R-DISSECTION 第 19 节；tables_check 登记 characters 表校验通过，world_test 回归跑完再提交；四阶段对照图（本机 tools/out 下，不入库）均已发用户
