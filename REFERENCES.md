@@ -1,10 +1,10 @@
-> 2026-11-02 起本页属于 yanxilu-world（版本 2 游戏项目）；版本 1 书架网页的参考留在 yanxilu/REFERENCES.md 的副本里。
-
 ---
 type: references
 project: yanxilu
 last_scan: 2026-10-29
 ---
+
+> 2026-11-02 起本页属于 yanxilu-world（版本 2 游戏项目）；版本 1 书架网页的参考留在 yanxilu/REFERENCES.md 的副本里。
 
 # 已有方案与参考
 
