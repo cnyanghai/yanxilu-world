@@ -1,4 +1,4 @@
-"""本地模拟 Baba 服务器：/api/yxl/* 按 Baba 新接口的语义实现，首页给研习录 server/index.html。
+"""本地模拟 Baba 服务器：/api/yxl/* 按 Baba 新接口的语义实现，首页给研习录 server/index.html（本仓库没有时给一页目录，/world 与 /room 照常）。
 用法：python3 tools/baba_mock.py 8790   （在仓库根目录跑；先 python3 build.py 生成 server/index.html）"""
 import json, sys, os, time, uuid, urllib.parse, threading
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -6,7 +6,7 @@ from email.parser import BytesParser
 from email.policy import default as email_default
 S = os.path.dirname(os.path.abspath(__file__))
 YXL = os.environ.get("YXL") or os.path.dirname(S)  # 仓库根目录；也可以用环境变量 YXL 指定
-EMBED = open(os.path.join(S, "embed.js")).read()
+EMBED = open(os.path.join(S, "embed.js")).read() if os.path.isfile(os.path.join(S, "embed.js")) else ""   # 书架仓库的嵌入脚本，游戏仓库没有
 COLLS = ["progress","notes","journal","cards","study","film","ebooks","mybooks","hidden","reading","marks","domains","lessons"]
 USERS = {"u1": {"id": "u1", "name": "测试用户", "phone": "13800000000", "paid": False}}
 DOCS = {}   # (uid, coll, id) -> data
@@ -81,8 +81,11 @@ class H(BaseHTTPRequestHandler):
         if p == "/__progress":
             PROGRESS["u1"][(q["slug"], q["code"])] = {"lastIdx": int(q["idx"]), "totalWatchedMs": 60000, "updatedAt": now()}; return self.send(200, {"ok": True})
         if p == "/":
-            return self.send(200, open(YXL + "/server/index.html", "rb").read(), "text/html; charset=utf-8", {"cache-control": "no-cache"})
+            home = YXL + "/server/index.html"   # 书架仓库有；游戏仓库（yanxilu-world）没有，给一页目录
+            if os.path.isfile(home): return self.send(200, open(home, "rb").read(), "text/html; charset=utf-8", {"cache-control": "no-cache"})
+            return self.send(200, b'<!doctype html><meta charset="utf-8"><title>yanxilu-world mock</title><p><a href="/world">/world</a> <a href="/room">/room</a>', "text/html; charset=utf-8", {"cache-control": "no-cache"})
         if p == "/sw.js":
+            if not os.path.isfile(YXL + "/sw.js"): return self.send(404, "nf", "text/plain")
             return self.send(200, open(YXL + "/sw.js", "rb").read(), "text/javascript; charset=utf-8", {"cache-control": "no-cache"})
         if p in ("/room", "/room/"): p = "/room/index.html"
         if p in ("/world", "/world/"): p = "/world/index.html"
