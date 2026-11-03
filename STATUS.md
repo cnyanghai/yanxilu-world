@@ -2,9 +2,9 @@
 type: status
 status: active
 cluster: product
-stage: 排练四阶段全部完成（design/studio/REHEARSAL.md）；生产流程 1.0 草案在 design/studio/PIPELINE.md；第九张表 characters 加 Schema 登记，objects 三态加 loop / 淡接 / events
-next: 用户看阶段四的图与 PIPELINE 草案；然后用自己的第一批资产（一件家具 + 一个预制体 + 读书人角色）按 PIPELINE 走一遍，走通后删 tools/out/d2r_local；M1 剩余（tiles 渲染按'层 + 印章 + 贴花'改、4.5 × 3.5 重烘、真显卡截图、摆放编辑器）并入
-blocked_by: 用户定项目拆分的四条（两仓库 / 线上 world / 新项目名 / 在制品上限）
+stage: 2026-11-02 从 yanxilu 拆出成独立项目（版本 2 游戏）；排练四阶段完成，生产流程 1.0 草案在 design/studio/PIPELINE.md，第九张表 characters 已登记
+next: 用户在 GitHub 建 cnyanghai/yanxilu-world 并推送（命令见会话）、在 Baba 跑一次命令让 /world 指到新克隆；然后用自己的第一批资产（一件家具 + 一个预制体 + 读书人角色）按 PIPELINE 走一遍，走通后删 tools/out/d2r_local；M1 剩余并入
+blocked_by: 用户建 GitHub 仓库与 Baba 一步
 updated: 2026-11-02
 ---
 
@@ -12,11 +12,11 @@ updated: 2026-11-02
 
 ## 现在停在哪
 
-- 版本 1：书架、档案架、卡牌与卡包、书房样机 `room/`（CSS 3D 第一稿）都在线，主版本在 https://baba.wogucloud.cn 。git 标签 `v1` 指向 2026-10-28 的 main。
-- 版本 2：`world/` 第一版写完（`index.html` + `world.js` + `sample.js`，three.js 0.186.1 自带在 `vendor/three/`）。有：院子总览（书房 + 三块待建地基）、书房建筑层（墙、地、梁、窗、书墙、档案架、桌、看板、灯）、程序化的书（InstancedMesh + 书脊贴图集）、盒与袋（题签 / 封条 / 引印）、今天的牌、文竹（茎与羽叶合并成两个网格，grow 参数控制株数层数）、四景别镜头与 hash 路由、三种光（夜读聚光灯一盏、晴窗左窗来光、雨天青灰）、指到显示铜色名字、Esc / 后退 / 面包屑退后。测试 `tools/tests/world_test.py` 通过：draw call 49 到 86，三角面约 9 千，控制台无报错。截图在 `tools/out/world/`（已 gitignore，是测试产物，每次跑都会覆盖）。
-- Baba 那边 2026-10-28 改成通配路由（2497f4a）：本仓库任何带 `index.html` 的顶层目录推到 main 就能在 `/<目录>` 访问。用户授权 Claude 跑了部署，已完成：线上 https://baba.wogucloud.cn/world 、/room 可开，/src、/server、/tools 被挡（404）。
-- 还是灰盒：没有烘焙、没有 CC0 家具模型、数据是 `sample.js` 的样例，还没接 `S.data`。
-- 注意：在 Baba 重新部署（带 base 注入）之前，本仓库新加的页面目录的 `index.html` 要带上 `world/index.html` 开头那段补 `<base>` 的脚本，否则在 `/<目录>` 下相对路径会解析到根。
+- 本仓库是研习录版本 2（三维小世界，游戏项目），2026-11-02 从 `cnyanghai/yanxilu` 拆出，历史全部保留；书架网页留在那边，两边共用 Baba 的数据接口。
+- 代码：`world/`（three.js，九张表 + 预设 + Schema，工坊面板）、`room/`（CSS 3D 样机，待归档）、`studies/`（临摹练习）、`tools/`（资产入库、烘焙、表校验、测试、暗黑 2 研究解码）。
+- 排练（design/studio/REHEARSAL.md）四阶段 2026-11-01 完成：资产解包导入、预设摆放、光与后期、角色与交互，每阶段的"学到的与改的"都已落进表与 Schema；生产流程 1.0 草案在 design/studio/PIPELINE.md。
+- 线上 /world：Baba 要另克隆本仓库并在书架克隆里放 `world` 链接（用户跑一次），之前是 404。
+- 仍是灰盒：没有自己的正式资产，数据是 sample.js，还没接 S.data。
 
 ## 当前阶段与下一步
 
@@ -67,6 +67,7 @@ updated: 2026-11-02
 
 ## 日志
 
+- 2026-11-02 拆分成独立项目：从 yanxilu 本地克隆（全部历史），删版本 1 的 src / index.html / server / dist / reports / study / build.py / katex / pdfjs / pwa 与档案架测试，去掉 v1 标签；CLAUDE.md 与 README 重写；brain 登记、记忆目录（五条反馈记忆复制过来）、tools/out 本机产物搬来；GitHub 仓库建立与 Baba 的 /world 链接留给用户
 - 2026-11-02 用户要求拆成两个对话项目；盘点结论：版本 1 与版本 2 代码互不引用可干净拆开，分配表与四个决定已交用户，未动手。tools/out 下的回归截图是测试产物不入库
 - 2026-11-01 排练阶段四：拆野蛮人状态机（65 态 440 动画 14 类手持物 4225 转移淡接 0.2）、时间线（278 条 30 帧 8 种事件，声音 618 脚印 146 释放点 31）、宝箱门三态；合成预制体把三档部件 21 件拼成三个人本机渲白天夜晚；写 characters.json 第九张表 + Schema（骨架 ≤ 80、部件三档、14 状态、6 手持物、绑定规则、转移默认 + 例外、时间线事件五种）并登记 tables.js；objects 的门盒牌书三态加 loop / crossfade，transitions any；PIPELINE.md 生产流程 1.0 草案七节；D2R-DISSECTION 第 19 节；tables_check 登记 characters 表校验通过，world_test 回归跑完再提交；四阶段对照图（本机 tools/out 下，不入库）均已发用户
 - 2026-11-01 阶段三补一轮（用户评图后）：地面底层换小路土层 + 草地层噪声成片 + 印章层、主光 1.1 环境 .4、环境图跟主光色 → 白天泛绿消失、光比 1.6、黎明暖黄昏蓝紫；夜晚死黑升到 43%（压环境光的代价）；白天 3 夜晚 3.5 黎明 3 黄昏 3；REHEARSAL 数字表改成三列，学到的加三条（底层是土、黎明靠色、必须有环境遮蔽）；一行内注释吞代码的低级错误耗了一轮
