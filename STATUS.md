@@ -3,8 +3,8 @@ type: status
 status: active
 cluster: product
 stage: 2026-11-02 从 yanxilu 拆出成独立项目（版本 2 游戏）；排练四阶段完成，生产流程 1.0 草案在 design/studio/PIPELINE.md，第九张表 characters 已登记
-next: 用户在 Baba 跑一次命令让 /world 指到新克隆并加 cron；然后用自己的第一批资产（一件家具 + 一个预制体 + 读书人角色）按 PIPELINE 走一遍，走通后删 tools/out/d2r_local；M1 剩余并入
-blocked_by: Baba 的 /world 链接（用户跑一条命令）
+next: 用自己的第一批资产（一件家具 + 一个预制体 + 读书人角色）按 design/studio/PIPELINE.md 走一遍，走通后删 tools/out/d2r_local 并把 PIPELINE 去掉"草案"；M1 剩余（tiles 渲染按层 + 印章 + 贴花改、4.5 × 3.5 重烘、真显卡截图、摆放编辑器）并入
+blocked_by: 无（服务器新克隆的每 5 分钟 git pull 由用户照书架那条加）
 updated: 2026-11-03
 ---
 
@@ -15,7 +15,7 @@ updated: 2026-11-03
 - 本仓库是研习录版本 2（三维小世界，游戏项目），2026-11-02 从 `cnyanghai/yanxilu` 拆出，历史全部保留；书架网页留在那边，两边共用 Baba 的数据接口。
 - 代码：`world/`（three.js，九张表 + 预设 + Schema，工坊面板）、`room/`（CSS 3D 样机，待归档）、`studies/`（临摹练习）、`tools/`（资产入库、烘焙、表校验、测试、暗黑 2 研究解码）。
 - 排练（design/studio/REHEARSAL.md）四阶段 2026-11-01 完成：资产解包导入、预设摆放、光与后期、角色与交互，每阶段的"学到的与改的"都已落进表与 Schema；生产流程 1.0 草案在 design/studio/PIPELINE.md。
-- 线上 /world：Baba 要另克隆本仓库并在书架克隆里放 `world` 链接（用户跑一次），之前是 404。
+- 线上 /world：2026-11-03 服务器已克隆本仓库到 /opt/yanxilu-world 并在 /opt/yanxilu 放了 `world` 链接，页面、引擎、表全部 200；推 main 后由服务器的 git pull 上线（新克隆的 cron 由用户加）。
 - 仍是灰盒：没有自己的正式资产，数据是 sample.js，还没接 S.data。
 
 ## 当前阶段与下一步
@@ -67,6 +67,7 @@ updated: 2026-11-03
 
 ## 日志
 
+- 2026-11-03 Baba：/opt/yanxilu-world 克隆 + /opt/yanxilu/world 链接完成，线上 /world 恢复（页面 / three.module.js / world.js / vis.json 均 200）；拆分全部收口
 - 2026-11-03 用户在网页建了 cnyanghai/yanxilu-world（公开）并推送，远端与本地一致（2b33157）；剩 Baba 一步
 - 2026-11-02 拆分后续：baba_mock 在没有书架首页与嵌入脚本时也能起（游戏仓库单独跑测试）；REFERENCES 的 frontmatter 改为本项目名；发现 world/ 用 ../vendor 引 three.js 与字体，拆分后线上会找不到，vendor/three 与 vendor/fonts 已挪进 world/vendor/，world/index.html、world.js、room/index.html 改为相对 world/ 的路径，回归通过；线上只需书架克隆里一个 world 链接；GitHub 建仓与推送、Baba 的 /world 链接仍留给用户
 - 2026-11-02 拆分成独立项目：从 yanxilu 本地克隆（全部历史），删版本 1 的 src / index.html / server / dist / reports / study / build.py / katex / pdfjs / pwa 与档案架测试，去掉 v1 标签；CLAUDE.md 与 README 重写；brain 登记、记忆目录（五条反馈记忆复制过来）、tools/out 本机产物搬来；GitHub 仓库建立与 Baba 的 /world 链接留给用户
