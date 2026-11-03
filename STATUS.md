@@ -3,9 +3,9 @@ type: status
 status: active
 cluster: product
 stage: 2026-11-02 从 yanxilu 拆出成独立项目（版本 2 游戏）；排练四阶段完成，生产流程 1.0 草案在 design/studio/PIPELINE.md，第九张表 characters 已登记
-next: 用户在 GitHub 建 cnyanghai/yanxilu-world 并推送（命令见会话）、在 Baba 跑一次命令让 /world 指到新克隆；然后用自己的第一批资产（一件家具 + 一个预制体 + 读书人角色）按 PIPELINE 走一遍，走通后删 tools/out/d2r_local；M1 剩余并入
-blocked_by: 用户建 GitHub 仓库与 Baba 一步
-updated: 2026-11-02
+next: 用户在 Baba 跑一次命令让 /world 指到新克隆并加 cron；然后用自己的第一批资产（一件家具 + 一个预制体 + 读书人角色）按 PIPELINE 走一遍，走通后删 tools/out/d2r_local；M1 剩余并入
+blocked_by: Baba 的 /world 链接（用户跑一条命令）
+updated: 2026-11-03
 ---
 
 # 状态
@@ -67,6 +67,7 @@ updated: 2026-11-02
 
 ## 日志
 
+- 2026-11-03 用户在网页建了 cnyanghai/yanxilu-world（公开）并推送，远端与本地一致（2b33157）；剩 Baba 一步
 - 2026-11-02 拆分后续：baba_mock 在没有书架首页与嵌入脚本时也能起（游戏仓库单独跑测试）；REFERENCES 的 frontmatter 改为本项目名；发现 world/ 用 ../vendor 引 three.js 与字体，拆分后线上会找不到，vendor/three 与 vendor/fonts 已挪进 world/vendor/，world/index.html、world.js、room/index.html 改为相对 world/ 的路径，回归通过；线上只需书架克隆里一个 world 链接；GitHub 建仓与推送、Baba 的 /world 链接仍留给用户
 - 2026-11-02 拆分成独立项目：从 yanxilu 本地克隆（全部历史），删版本 1 的 src / index.html / server / dist / reports / study / build.py / katex / pdfjs / pwa 与档案架测试，去掉 v1 标签；CLAUDE.md 与 README 重写；brain 登记、记忆目录（五条反馈记忆复制过来）、tools/out 本机产物搬来；GitHub 仓库建立与 Baba 的 /world 链接留给用户
 - 2026-11-02 用户要求拆成两个对话项目；盘点结论：版本 1 与版本 2 代码互不引用可干净拆开，分配表与四个决定已交用户，未动手。tools/out 下的回归截图是测试产物不入库
