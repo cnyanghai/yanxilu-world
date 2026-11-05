@@ -61,6 +61,7 @@ for k, boxes in V.items():
         else:
             img = im.crop(box).resize((px(wm), px(hm)), Image.LANCZOS)
         out[f"{k}_{'fsb'[n]}"] = img
+raw = dict(out)                     # 未调色的旧贴图：materials.py 找分区用
 
 
 # ---------- 2026-11-04 补弱项：无缝、程序件、变体、地面、法线 ----------
@@ -189,6 +190,20 @@ out["thatch_end"] = strands(px(2.0), px(0.3), pal, 9000, 4, 18, 2, 0.5, False).c
 fringe = strands(px(2.0), px(0.19), pal, 2600, 25, 95, 2, 0.12, True)
 out["wall_plain_mir_f"] = out["wall_plain_f"].transpose(Image.FLIP_LEFT_RIGHT)
 out["wall_plain_full_f"] = wall_full(out["wall_plain_f"])
+raw["wall_plain_mir_f"] = raw["wall_plain_f"].transpose(Image.FLIP_LEFT_RIGHT); raw["wall_plain_full_f"] = wall_full(raw["wall_plain_f"])
+
+# ---------- 材质板合成（ASSET-SPEC 10.6）：墙、茅草、屋脊、柱梁、门扇、山花换成 768 像素/米 ----------
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import materials
+HEIGHTS = materials.compose(raw, out)
+if HEIGHTS:
+    for k in ("wall_plain_f", "wall_plain_mir_f", "wall_plain_full_f", "wall_door_f", "wall_window_f"):
+        out[k] = grime(out[k], 2.2)
+    for k in ("post_f", "post_s"):
+        out[k] = grime(out[k], 2.4)
+    pal = np.asarray(out.pop("_mat_thatch")).reshape(-1, 3).astype(np.float32); pal = pal[pal.mean(1) > np.percentile(pal.mean(1), 50)][::97]
+    out["thatch_end"] = strands(px(2.0), px(0.3), pal, 9000, 4, 18, 2, 0.5, False).convert("RGB")
+    fringe = strands(px(2.0), px(0.19), pal, 2600, 25, 95, 2, 0.12, True)
 # 地面：原图偏亮（中位 129）且橙，压到中位约 67、降饱和，让房子从地上跳出来；草地是第二层
 from PIL import ImageEnhance
 for g, k, sat in (("ground_dirt", 0.52, 0.72), ("ground_grass", 0.78, 0.95)):
@@ -234,6 +249,7 @@ def tuft(size=256):
 
 tuft().save(os.path.join(OUT, "grass_tuft.png"))
 
+rng = np.random.default_rng(2026)   # 地面与散布单独定种子：改贴图不牵动草石位置
 # 地面分层图（12 × 12 米，32 像素/米；R 草、G 潮暗、B 路），以 Blender 物体坐标 (x+6)/12、(y+6)/12 取；散布位置同源写 scatter.json
 import json
 GN = 384; xs_ = -6 + (np.arange(GN) + 0.5) / 32; X, Y = np.meshgrid(xs_, xs_[::-1])
@@ -280,9 +296,10 @@ for y in (1.78, 2.36, 2.95, 3.55, 4.17, 4.8, 5.45):   # 踏步石
 json.dump(sc, open(os.path.join(OUT, "scatter.json"), "w"))
 
 # 法线强度：由明度推的高度会把暗处当凹处，开太猛有浮雕味（2026-11-04 近景看过，2.0 偏猛）
-STRENGTH = {"roof_thatch_f": 1.6, "thatch_end": 2.0, "ridge_f": 1.6, "ground_dirt": 1.0, "ground_grass": 1.0, "stone": 1.6, "rock": 2.2}
+STRENGTH = {"roof_thatch_f": 1.6, "thatch_end": 1.0, "ridge_f": 1.6, "ground_dirt": 1.0, "ground_grass": 1.0, "stone": 1.6, "rock": 2.2}
 for k, img in out.items():
     save(img, k + ".jpg")
-    normal(img, STRENGTH.get(k, 0.9)).save(os.path.join(OUT, k + "_n.png"))
+    n = materials.normal_from_height(HEIGHTS[k]) if k in HEIGHTS else normal(img, STRENGTH.get(k, 0.9))
+    n.save(os.path.join(OUT, k + "_n.png"))
 fringe.save(os.path.join(OUT, "thatch_fringe.png"))
 print("ok", OUT, len(out), "张 + 法线")

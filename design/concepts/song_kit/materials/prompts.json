@@ -1,0 +1,11 @@
+{
+ "suffix": "Seamless tileable texture, orthographic straight-on view, the material fills the entire square frame edge to edge, even flat neutral lighting, no cast shadows, no vignette, no objects, no text, photoreal PBR albedo for a stylized-realistic game, slightly desaturated warm earth tones.",
+ "items": {
+  "thatch": "Old rice-straw thatch surface seen straight on, 1 m by 1 m area, thousands of straw stalks running vertically top to bottom, densely packed in slightly uneven tufts, aged grey-brown with some golden stalks, no bindings, no rods, no gaps.",
+  "wattle": "Bare woven bamboo wattle, 0.8 m by 0.8 m area, flat split-bamboo strips woven horizontally over and under vertical round stakes about 12 cm apart, weathered tan, dark gaps between strips, no clay.",
+  "planks": "Five horizontal weathered pine planks stacked edge to edge, each about 20 cm tall, 1 m by 1 m area, grey-brown sun-bleached grain, cracks, a few iron nail heads, thin dark seams between planks.",
+  "plaster": "Ochre clay plaster wall surface, 1 m by 1 m area, mixed with chopped straw fibres, trowel marks, fine hairline cracks, slight color mottling, no holes, no exposed weave.",
+  "rammed": "Rammed earth wall surface, 1 m by 1 m area, horizontal compacted layers about 10 cm thick, small pebbles and straw, slightly crumbling layer edges, warm brown-ochre.",
+  "tiles": "Grey-blue fired clay roof tiles seen from directly above, 1 m by 1 m area, overlapping rows of concave pan tiles and convex cover tiles running vertically, slight moss and soot, Song-dynasty style."
+ }
+}

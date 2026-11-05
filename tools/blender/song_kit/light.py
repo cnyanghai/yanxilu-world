@@ -82,8 +82,8 @@ def rig(period):
         if o:
             bpy.data.objects.remove(o, do_unlink=True)
     if period == "day":
-        world("#c4d2e8", "#5e5444", 1.15)      # 天光取 vis 补光的冷蓝灰（#dfe6f0 一路），地面反光取土色；阴影偏冷、亮面偏暖
-        light("sun_key", "SUN", color="#f5e6c0", energy=7.0, direction=sun_dir(63))   # vis dir (-0.6,-0.9,0.3) 的水平方位：右前方
+        world("#c4d2e8", "#5e5444", 1.45)      # 天光取 vis 补光的冷蓝灰（#dfe6f0 一路），地面反光取土色；阴影偏冷、亮面偏暖
+        light("sun_key", "SUN", color="#f5e6c0", energy=6.3, direction=sun_dir(63))   # vis dir (-0.6,-0.9,0.3) 的水平方位：右前方
         sc.view_settings.exposure = -1.15     # 受光 : 背光目标 2.5 : 1，整图中位 40 到 55、最暗 5% ≤ 12
         lantern(0.0)
     else:
@@ -122,8 +122,10 @@ def cam(kind):
     c = o.data; c.clip_start, c.clip_end = 0.5, 400
     if kind == "wide":     # 仿游戏：左前方、俯 30 度、长焦
         tgt, az, el, dist, c.lens = Vector((0, 0.4, 1.4)), -35, 30, 27, 135
-    else:                  # 近景：右前方平视，看檐口、窗、门
+    elif kind == "close":  # 近景：右前方平视，看檐口、窗、门
         tgt, az, el, dist, c.lens = Vector((0.6, 1.0, 1.7)), 28, 12, 9.5, 85
+    else:                  # 细节：3.5 米、50 毫米，画面约 2.5 米宽 = 屏上约 640 像素/米，看贴图清不清楚
+        tgt, az, el, dist, c.lens = Vector((1.1, 1.0, 1.55)), 18, 10, 3.5, 50
     a, e = math.radians(az), math.radians(el)
     o.location = tgt + dist * Vector((math.sin(a) * math.cos(e), math.cos(a) * math.cos(e), math.sin(e)))
     o.rotation_euler = (tgt - o.location).to_track_quat("-Z", "Y").to_euler()
