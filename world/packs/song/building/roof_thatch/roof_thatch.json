@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "roof_thatch",
+ "kind": "building",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "roof_thatch.gltf.json",
+   "tris": 980,
+   "textures": [
+    "roof_thatch_b.jpg",
+    "roof_thatch_b_n.jpg",
+    "roof_thatch_f.jpg",
+    "roof_thatch_f_n.jpg",
+    "thatch_end.jpg",
+    "thatch_end_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 200,
+   "d": 206,
+   "h": 30
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/roof_thatch.gltf",
+  "tris": {
+   "after": 980,
+   "budget": 1500
+  },
+  "bbox_m": [
+   [
+    -1,
+    -0.04,
+    -2.056
+   ],
+   [
+    1,
+    0.258,
+    0
+   ]
+  ]
+ }
+}

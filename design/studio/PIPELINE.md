@@ -16,7 +16,7 @@
 |---|---|---|---|
 | 1.1 定义 | 先在 objects 表登记：占地、槽位类型、档位、三态 | 手写 + tables_check | 表校验过 |
 | 1.2 出模 | 格子家具 Blender 按尺寸建；自由家具、建筑组件与小件走图生三维，**输入是三视图**（正面、侧面、反侧面，黑底无杂物，同一网格标尺）；角色 Blender 绑标准骨架 | tools/blender/*、tools/fal_image3d.py | 原点底面中心、正面 -Z；厚度对（薄墙不能出成实心块） |
-| 1.3 导入 | 减面到预算（家具 3000 / 小件 500 / 角色 8000）、材质归位、贴图瘦身（ORM 半分辨率）、**按尺寸表缩放并吸附到 25 厘米格、拐角对齐**、两档 LOD、写目录与定义 JSON、登记 props | tools/asset_import.py | 偏差 > 35% 提醒；面数超 15% 拒收；相邻组件接缝 ≤ 1 厘米 |
+| 1.3 导入 | 建筑组件走组件模式（`asset_import.py --components`：保留原点、贴图去重共用、透明小图内嵌）；家具与图生件：减面到预算（家具 3000 / 小件 500 / 角色 8000）、材质归位、贴图瘦身（ORM 半分辨率）、**按尺寸表缩放并吸附到 25 厘米格、拐角对齐**、两档 LOD、写目录与定义 JSON、登记 props | tools/asset_import.py | 偏差 > 35% 提醒；面数超 15% 拒收；相邻组件接缝 ≤ 1 厘米 |
 | 1.4 看一眼 | 白天 / 夜晚两张同机位；**顶视与仰视各一张查破洞** | 排练的看图页改成正式的 tools/tests/asset_view.py | 量明度分布，三件套齐；镂空率（顶视透底像素占比）≤ 2% |
 | 1.5 人形实测 | 标准角色（身高 1.5，见 ASSET-SPEC）站进去：门洞、檐下、栈道、楼梯；巡检脚本按寻路格把每个可走格走一遍 | tools/tests/walk_check.mjs（待写，接 world/sim/grid.js） | 门洞净高 ≥ 角色身高 × 1.3；无格子掉出地面；无卡死 |
 
@@ -67,7 +67,7 @@
 ## 6. 工具清单
 
 已有：asset_import、asset_shrink、fal_image3d、tables_check、world_test、paint_verify、bake.sh、d2_decode（研究用）。
-已转正：明度量尺 tools/tests/measure.py（2026-11-04）；材质板合成 tools/blender/song_kit/materials.py（2026-11-04）；Blender 看光 tools/blender/song_kit/light.py（资产在 Eevee 下按 vis 打白天 / 夜晚出图）。
+已转正：明度量尺 tools/tests/measure.py（2026-11-04）；材质板合成 tools/blender/song_kit/materials.py（2026-11-04）；组件导出 tools/blender/song_kit/export_kit.py 与组件入库 asset_import --components（2026-11-05）；真显卡截图 tools/tests/camp_shot.py（Windows Chrome 远程调试，连不上退回软件渲染，2026-11-05）；Blender 看光 tools/blender/song_kit/light.py（资产在 Eevee 下按 vis 打白天 / 夜晚出图）。
 排练里写的、要转正的：prefab 组装（prepare / finish 的我们版）、场景看图页（scene.html → tools/tests/asset_view.py）。
 没有的：摆放编辑器、散布工具、环境图烘焙、状态机与时间线的播放器、人形巡检脚本（walk_check）、图集打包、镂空率量尺。
 

@@ -76,6 +76,24 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "description": "等比缩放，默认 1；暗黑 2 预设里 60% 是 1，植被 0.5 到 0.8"
+         },
+         "q": {
+          "type": "array",
+          "items": {
+           "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "四元数 [x, y, z, w]（预制体从 Blender 导出时用，避免欧拉角顺序之争）"
+         },
+         "s": {
+          "type": "array",
+          "items": {
+           "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "三轴缩放"
          }
         }
        },
@@ -159,6 +177,22 @@
          },
          "fromObject": {
           "type": "boolean"
+         },
+         "periods": {
+          "type": "array",
+          "items": {
+           "enum": [
+            "dawn",
+            "day",
+            "dusk",
+            "night"
+           ]
+          },
+          "description": "哪些时段亮；不写就全时段"
+         },
+         "emissive": {
+          "type": "boolean",
+          "description": "同一实体的模型跟着亮（灯笼纸）"
          }
         }
        },
@@ -264,6 +298,85 @@
           "type": "integer",
           "minimum": -1,
           "maximum": 3
+         }
+        }
+       },
+       "Ground": {
+        "type": "object",
+        "required": [
+         "size",
+         "mask",
+         "layers"
+        ],
+        "description": "地面分层（营地小试，技术卡十四）：一张 RGB 分层图（R 草、G 潮暗、B 路）混两层平铺材质",
+        "properties": {
+         "size": {
+          "type": "integer"
+         },
+         "mask": {
+          "type": "string"
+         },
+         "damp": {
+          "type": "number"
+         },
+         "layers": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+           "type": "object",
+           "required": [
+            "alb",
+            "tiling"
+           ],
+           "properties": {
+            "name": {
+             "type": "string"
+            },
+            "alb": {
+             "type": "string"
+            },
+            "nrm": {
+             "type": "string"
+            },
+            "tiling": {
+             "type": "integer",
+             "description": "一铺多少厘米"
+            }
+           }
+          }
+         },
+         "extent": {
+          "type": "integer",
+          "description": "地面实际铺多大（厘米）；分层图只管中间 size，外圈沿用边缘值"
+         }
+        }
+       },
+       "Scatter": {
+        "type": "object",
+        "required": [
+         "file",
+         "models"
+        ],
+        "description": "散布（技术卡十四）：散布表与分层图同源同种子，同种物件一个实例网格",
+        "properties": {
+         "file": {
+          "type": "string"
+         },
+         "axes": {
+          "enum": [
+           "blender",
+           "three"
+          ],
+          "description": "表里坐标的轴向；blender = (x, y) 平面，换算成 three 的 (x, -y)"
+         },
+         "models": {
+          "type": "object",
+          "additionalProperties": {
+           "type": "array",
+           "items": {
+            "type": "string"
+           }
+          }
          }
         }
        }

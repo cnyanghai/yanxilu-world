@@ -271,6 +271,106 @@
    "characterShadow": 0.9,
    "characterBrightness": 0.4,
    "itemBrightness": 2.0
+  },
+  {
+   "room": "camp",
+   "exposure": 1.0,
+   "lut": "lut_day",
+   "unitLight": {
+    "power": 0,
+    "radius": 2.5,
+    "color": "#ffd9a0"
+   },
+   "units": "physical",
+   "characterLight": {
+    "key": "#fff6e8",
+    "keyPower": 1.0,
+    "fill": "#e6ecff",
+    "fillPower": 0.2
+   },
+   "characterShadow": 0.9,
+   "characterBrightness": 0.4,
+   "itemBrightness": 2.0,
+   "localLights": {},
+   "id": "camp:day",
+   "period": "day",
+   "bakeSet": "day",
+   "key": {
+    "color": "#f5e6c0",
+    "power": 6.3,
+    "dir": [
+     -0.608,
+     -0.731,
+     0.31
+    ]
+   },
+   "ambient": {
+    "sky": "#c4d2e8",
+    "ground": "#5e5444",
+    "power": 1.45
+   },
+   "fog": {
+    "color": "#c9ccc8",
+    "density": 0.02
+   },
+   "ibl": 0.4,
+   "vignette": 0.22,
+   "localLightMul": 1.0,
+   "ao": {
+    "strength": 0.6,
+    "radius": 0.45
+   },
+   "contrast": 1.05
+  },
+  {
+   "room": "camp",
+   "exposure": 1.0,
+   "lut": "lut_night",
+   "unitLight": {
+    "power": 0,
+    "radius": 2.5,
+    "color": "#ffd9a0"
+   },
+   "units": "physical",
+   "characterLight": {
+    "key": "#fff6e8",
+    "keyPower": 1.0,
+    "fill": "#e6ecff",
+    "fillPower": 0.2
+   },
+   "characterShadow": 0.9,
+   "characterBrightness": 0.4,
+   "itemBrightness": 2.0,
+   "localLights": {},
+   "id": "camp:night",
+   "period": "night",
+   "bakeSet": "night",
+   "key": {
+    "color": "#9fb4dc",
+    "power": 2.0,
+    "dir": [
+     0.522,
+     -0.731,
+     -0.438
+    ]
+   },
+   "ambient": {
+    "sky": "#3a4c6e",
+    "ground": "#0e1218",
+    "power": 2.66
+   },
+   "fog": {
+    "color": "#141a26",
+    "density": 0.02
+   },
+   "ibl": 0.1,
+   "vignette": 0.3,
+   "localLightMul": 2.2,
+   "ao": {
+    "strength": 0.5,
+    "radius": 0.45
+   },
+   "contrast": 1.05
   }
  ],
  "weather": {
@@ -290,5 +390,6 @@
   "keyPower": "sqrt",
   "ibl": "pow0.4",
   "exposureConstant": true
- }
+ },
+ "mapping_camp": "营地（units: physical）按 Blender 看光的物理单位：key.power = 太阳辐照度（同 Blender 太阳强度，three 平行光强度直接用）；ambient.power = 天光强度（同 Blender 世界强度，三 半球光 × π）；曝光全时段恒定 0.45（= Blender 白天的 -1.15 档）；夜晚在 Blender 里曝光高 1.15 档，折进光量：月光、天光 × 2.2，局部灯按 localLightMul 乘（灯功率仍写 Blender 瓦数，引擎按 瓦 / 4π 换坎德拉）"
 }

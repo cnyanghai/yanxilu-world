@@ -78,6 +78,13 @@
    "h": 260,
    "t": 60,
    "nearLowered": false
+  },
+  "open": {
+   "name": "露天（无墙）",
+   "segment": "none",
+   "h": 0,
+   "t": 0,
+   "nearLowered": false
   }
  },
  "roof": {

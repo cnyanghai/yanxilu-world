@@ -1,0 +1,724 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "shed",
+ "pack": "song",
+ "name": "茅草偏屋",
+ "note": "由 tools/blender/song_kit/export_kit.py 从 shed.py 拼好的场景导出；坐标 three.js 轴向（y 上、正面朝 +z），四元数 q = [x, y, z, w]；s 为三轴缩放",
+ "entities": [
+  {
+   "id": "post0",
+   "components": {
+    "Transform": {
+     "x": -200,
+     "y": 0,
+     "z": -100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "post",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "post1",
+   "components": {
+    "Transform": {
+     "x": 0,
+     "y": 0,
+     "z": -100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "post",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "post2",
+   "components": {
+    "Transform": {
+     "x": 200,
+     "y": 0,
+     "z": -100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "post",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "post3",
+   "components": {
+    "Transform": {
+     "x": -200,
+     "y": 0,
+     "z": 100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "post",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "post4",
+   "components": {
+    "Transform": {
+     "x": 0,
+     "y": 0,
+     "z": 100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "post",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "post5",
+   "components": {
+    "Transform": {
+     "x": 200,
+     "y": 0,
+     "z": 100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "post",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "wall_f_door",
+   "components": {
+    "Transform": {
+     "x": -100,
+     "y": 0,
+     "z": -100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "wall_door",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "wall_f_win",
+   "components": {
+    "Transform": {
+     "x": 100,
+     "y": 0,
+     "z": -100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "wall_window",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "wall_b0",
+   "components": {
+    "Transform": {
+     "x": -100,
+     "y": 0,
+     "z": 100,
+     "q": [
+      -0.0,
+      -1.0,
+      0.0,
+      0.0
+     ]
+    },
+    "Model": {
+     "file": "wall_plain",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "wall_b1",
+   "components": {
+    "Transform": {
+     "x": 100,
+     "y": 0,
+     "z": 100,
+     "q": [
+      -0.0,
+      -1.0,
+      0.0,
+      0.0
+     ]
+    },
+    "Model": {
+     "file": "wall_plain_full",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "wall_l",
+   "components": {
+    "Transform": {
+     "x": -200,
+     "y": 0,
+     "z": 0,
+     "q": [
+      0.0,
+      0.707107,
+      -0.0,
+      0.707107
+     ]
+    },
+    "Model": {
+     "file": "wall_plain_mir",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "wall_r",
+   "components": {
+    "Transform": {
+     "x": 200,
+     "y": 0,
+     "z": 0,
+     "q": [
+      -0.0,
+      -0.707107,
+      0.0,
+      0.707107
+     ]
+    },
+    "Model": {
+     "file": "wall_plain_full",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "beam0",
+   "components": {
+    "Transform": {
+     "x": -100,
+     "y": 224,
+     "z": -100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "beam",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "beam1",
+   "components": {
+    "Transform": {
+     "x": 100,
+     "y": 224,
+     "z": -100,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "beam",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "beam2",
+   "components": {
+    "Transform": {
+     "x": -100,
+     "y": 224,
+     "z": 100,
+     "q": [
+      -0.0,
+      -1.0,
+      0.0,
+      0.0
+     ]
+    },
+    "Model": {
+     "file": "beam",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "beam3",
+   "components": {
+    "Transform": {
+     "x": 100,
+     "y": 224,
+     "z": 100,
+     "q": [
+      -0.0,
+      -1.0,
+      0.0,
+      0.0
+     ]
+    },
+    "Model": {
+     "file": "beam",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "beam4",
+   "components": {
+    "Transform": {
+     "x": -200,
+     "y": 224,
+     "z": 0,
+     "q": [
+      0.0,
+      0.707107,
+      -0.0,
+      0.707107
+     ]
+    },
+    "Model": {
+     "file": "beam",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "beam5",
+   "components": {
+    "Transform": {
+     "x": 200,
+     "y": 224,
+     "z": 0,
+     "q": [
+      -0.0,
+      -0.707107,
+      0.0,
+      0.707107
+     ]
+    },
+    "Model": {
+     "file": "beam",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "gable_l",
+   "components": {
+    "Transform": {
+     "x": -200,
+     "y": 240,
+     "z": 0,
+     "q": [
+      0.0,
+      0.707107,
+      -0.0,
+      0.707107
+     ]
+    },
+    "Model": {
+     "file": "gable",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "gable_r",
+   "components": {
+    "Transform": {
+     "x": 200,
+     "y": 240,
+     "z": 0,
+     "q": [
+      -0.0,
+      -0.707107,
+      0.0,
+      0.707107
+     ]
+    },
+    "Model": {
+     "file": "gable",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "roof_f0",
+   "components": {
+    "Transform": {
+     "x": -100,
+     "y": 340,
+     "z": 0,
+     "q": [
+      -0.382683,
+      0.0,
+      -0.0,
+      0.92388
+     ]
+    },
+    "Model": {
+     "file": "roof_thatch",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "roof_f1",
+   "components": {
+    "Transform": {
+     "x": 100,
+     "y": 340,
+     "z": 0,
+     "q": [
+      -0.382683,
+      0.0,
+      -0.0,
+      0.92388
+     ]
+    },
+    "Model": {
+     "file": "roof_thatch",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "roof_f_vr",
+   "components": {
+    "Transform": {
+     "x": 200,
+     "y": 340,
+     "z": 0,
+     "q": [
+      -0.382683,
+      0.0,
+      -0.0,
+      0.92388
+     ]
+    },
+    "Model": {
+     "file": "roof_verge_r",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "roof_f_vl",
+   "components": {
+    "Transform": {
+     "x": -200,
+     "y": 340,
+     "z": 0,
+     "q": [
+      -0.382683,
+      0.0,
+      -0.0,
+      0.92388
+     ]
+    },
+    "Model": {
+     "file": "roof_verge_l",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "roof_b0",
+   "components": {
+    "Transform": {
+     "x": -100,
+     "y": 340,
+     "z": 0,
+     "q": [
+      -0.0,
+      -0.92388,
+      -0.382683,
+      0.0
+     ]
+    },
+    "Model": {
+     "file": "roof_thatch",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "roof_b1",
+   "components": {
+    "Transform": {
+     "x": 100,
+     "y": 340,
+     "z": 0,
+     "q": [
+      -0.0,
+      -0.92388,
+      -0.382683,
+      0.0
+     ]
+    },
+    "Model": {
+     "file": "roof_thatch",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "roof_b_vr",
+   "components": {
+    "Transform": {
+     "x": -200,
+     "y": 340,
+     "z": 0,
+     "q": [
+      -0.0,
+      -0.92388,
+      -0.382683,
+      0.0
+     ]
+    },
+    "Model": {
+     "file": "roof_verge_r",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "roof_b_vl",
+   "components": {
+    "Transform": {
+     "x": 200,
+     "y": 340,
+     "z": 0,
+     "q": [
+      -0.0,
+      -0.92388,
+      -0.382683,
+      0.0
+     ]
+    },
+    "Model": {
+     "file": "roof_verge_l",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "ridge0",
+   "components": {
+    "Transform": {
+     "x": -100,
+     "y": 343,
+     "z": 0,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "ridge",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "ridge1",
+   "components": {
+    "Transform": {
+     "x": 100,
+     "y": 343,
+     "z": 0,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "ridge",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "ridge_er",
+   "components": {
+    "Transform": {
+     "x": 200,
+     "y": 343,
+     "z": 0,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "ridge_end_r",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "ridge_el",
+   "components": {
+    "Transform": {
+     "x": -200,
+     "y": 343,
+     "z": 0,
+     "q": [
+      0.0,
+      0.0,
+      -0.0,
+      1.0
+     ]
+    },
+    "Model": {
+     "file": "ridge_end_l",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "door",
+   "components": {
+    "Transform": {
+     "x": -145,
+     "y": 0,
+     "z": -100,
+     "q": [
+      0.0,
+      -0.241922,
+      -0.0,
+      0.970296
+     ]
+    },
+    "Model": {
+     "file": "door_leaf",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "lantern",
+   "components": {
+    "Transform": {
+     "x": -172,
+     "y": 172,
+     "z": -125
+    },
+    "Model": {
+     "file": "lantern",
+     "castShadow": false
+    },
+    "Light": {
+     "kind": "point",
+     "color": [
+      1.0,
+      0.784,
+      0.565
+     ],
+     "power": 80,
+     "radius": 6,
+     "periods": [
+      "dusk",
+      "night"
+     ],
+     "emissive": true
+    }
+   }
+  },
+  {
+   "id": "window_glow",
+   "components": {
+    "Transform": {
+     "x": 100,
+     "y": 130,
+     "z": -70
+    },
+    "Light": {
+     "kind": "point",
+     "color": [
+      1.0,
+      0.75,
+      0.5
+     ],
+     "power": 70,
+     "radius": 30,
+     "periods": [
+      "dusk",
+      "night"
+     ],
+     "note": "屋里的灯，从窗棂透出来（Blender 看光里是 0.9 × 0.7 的面光）"
+    }
+   }
+  }
+ ]
+}

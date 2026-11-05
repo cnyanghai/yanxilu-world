@@ -1,0 +1,44 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "post",
+ "kind": "building",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "post.gltf.json",
+   "tris": 44,
+   "textures": [
+    "post_f.jpg",
+    "post_f_n.jpg",
+    "post_s.jpg",
+    "post_s_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 16,
+   "d": 16,
+   "h": 240
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/post.gltf",
+  "tris": {
+   "after": 44,
+   "budget": 300
+  },
+  "bbox_m": [
+   [
+    -0.08,
+    0,
+    -0.08
+   ],
+   [
+    0.08,
+    2.4,
+    0.08
+   ]
+  ]
+ }
+}

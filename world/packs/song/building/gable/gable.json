@@ -1,0 +1,44 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "gable",
+ "kind": "building",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "gable.gltf.json",
+   "tris": 32,
+   "textures": [
+    "gable_f.jpg",
+    "gable_f_n.jpg",
+    "gable_s.jpg",
+    "gable_s_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 199,
+   "d": 12,
+   "h": 99
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/gable.gltf",
+  "tris": {
+   "after": 32,
+   "budget": 400
+  },
+  "bbox_m": [
+   [
+    -0.994,
+    0,
+    -0.06
+   ],
+   [
+    0.994,
+    0.994,
+    0.06
+   ]
+  ]
+ }
+}

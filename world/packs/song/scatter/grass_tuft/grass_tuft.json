@@ -1,0 +1,39 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "grass_tuft",
+ "kind": "scatter",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "grass_tuft.gltf.json",
+   "tris": 6,
+   "textures": [],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 46,
+   "d": 40,
+   "h": 32
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/grass_tuft.gltf",
+  "tris": {
+   "after": 6,
+   "budget": 50
+  },
+  "bbox_m": [
+   [
+    -0.23,
+    0,
+    -0.199
+   ],
+   [
+    0.23,
+    0.32,
+    0.199
+   ]
+  ]
+ }
+}

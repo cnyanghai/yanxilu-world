@@ -203,7 +203,7 @@ if HEIGHTS:
         out[k] = grime(out[k], 2.4)
     pal = np.asarray(out.pop("_mat_thatch")).reshape(-1, 3).astype(np.float32); pal = pal[pal.mean(1) > np.percentile(pal.mean(1), 50)][::97]
     out["thatch_end"] = strands(px(2.0), px(0.3), pal, 9000, 4, 18, 2, 0.5, False).convert("RGB")
-    fringe = strands(px(2.0), px(0.19), pal, 2600, 25, 95, 2, 0.12, True)
+    fringe = strands(px(2.0), px(0.19), pal * 0.75, 2600, 25, 95, 2, 0.12, True)   # 引擎里阳光下发白（2026-11-05），压暗
 # 地面：原图偏亮（中位 129）且橙，压到中位约 67、降饱和，让房子从地上跳出来；草地是第二层
 from PIL import ImageEnhance
 for g, k, sat in (("ground_dirt", 0.52, 0.72), ("ground_grass", 0.78, 0.95)):

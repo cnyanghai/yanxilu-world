@@ -1,0 +1,44 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "door_leaf",
+ "kind": "building",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "door_leaf.gltf.json",
+   "tris": 44,
+   "textures": [
+    "door_leaf_f.jpg",
+    "door_leaf_f_n.jpg",
+    "door_leaf_s.jpg",
+    "door_leaf_s_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 90,
+   "d": 5,
+   "h": 195
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/door_leaf.gltf",
+  "tris": {
+   "after": 44,
+   "budget": 400
+  },
+  "bbox_m": [
+   [
+    0,
+    0,
+    -0.025
+   ],
+   [
+    0.9,
+    1.95,
+    0.025
+   ]
+  ]
+ }
+}

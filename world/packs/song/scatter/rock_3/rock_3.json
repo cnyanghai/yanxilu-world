@@ -1,0 +1,42 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "rock_3",
+ "kind": "scatter",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "rock_3.gltf.json",
+   "tris": 320,
+   "textures": [
+    "rock.jpg",
+    "rock_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 219,
+   "d": 222,
+   "h": 72
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/rock_3.gltf",
+  "tris": {
+   "after": 320,
+   "budget": 500
+  },
+  "bbox_m": [
+   [
+    -1.069,
+    -0.199,
+    -1.212
+   ],
+   [
+    1.121,
+    0.525,
+    1.006
+   ]
+  ]
+ }
+}

@@ -1,0 +1,44 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "wall_plain",
+ "kind": "building",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "wall_plain.gltf.json",
+   "tris": 44,
+   "textures": [
+    "wall_plain_f.jpg",
+    "wall_plain_f_n.jpg",
+    "wall_plain_s.jpg",
+    "wall_plain_s_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 200,
+   "d": 12,
+   "h": 220
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/wall_plain.gltf",
+  "tris": {
+   "after": 44,
+   "budget": 800
+  },
+  "bbox_m": [
+   [
+    -1,
+    0,
+    -0.06
+   ],
+   [
+    1,
+    2.2,
+    0.06
+   ]
+  ]
+ }
+}

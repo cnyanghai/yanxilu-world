@@ -1,0 +1,42 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "lantern",
+ "kind": "prop",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "lantern.gltf.json",
+   "tris": 64,
+   "textures": [
+    "post_f.jpg",
+    "post_f_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 18,
+   "d": 18,
+   "h": 32
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/lantern.gltf",
+  "tris": {
+   "after": 64,
+   "budget": 300
+  },
+  "bbox_m": [
+   [
+    -0.09,
+    -0.16,
+    -0.09
+   ],
+   [
+    0.09,
+    0.16,
+    0.09
+   ]
+  ]
+ }
+}

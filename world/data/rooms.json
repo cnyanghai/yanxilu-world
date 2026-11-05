@@ -662,6 +662,263 @@
     ],
     "roof": null
    }
+  },
+  {
+   "id": "camp",
+   "name": "营地小试",
+   "size": {
+    "w": 1200,
+    "d": 1200,
+    "h": 0
+   },
+   "grid": {
+    "cell": 25,
+    "plot": {
+     "w": 1200,
+     "d": 1200
+    },
+    "note": "宋代营地一周小试：一间茅草偏屋、篝火、带路和草的地面；原点偏屋中心，偏屋正面朝 -z"
+   },
+   "defaultVis": "camp:day",
+   "sound": "camp",
+   "slots": [],
+   "stations": {
+    "wide": {
+     "target": [
+      0,
+      140,
+      -40
+     ],
+     "az": -145.0,
+     "el": 30,
+     "dist": 2700,
+     "fov": 9.52
+    },
+    "close": {
+     "target": [
+      60,
+      170,
+      -100
+     ],
+     "az": 152.0,
+     "el": 12,
+     "dist": 950,
+     "fov": 15.06
+    },
+    "detail": {
+     "target": [
+      110,
+      155,
+      -100
+     ],
+     "az": 162.0,
+     "el": 10,
+     "dist": 350,
+     "fov": 25.4
+    },
+    "note": "照 Blender 看光（tools/blender/song_kit/light.py）的三个机位换算：135 / 85 / 50 毫米，画面 16:10 时的竖向视场角"
+   },
+   "preset": "camp",
+   "tiles": {
+    "cell": 100,
+    "floor": [
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ],
+     [
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth",
+      "earth"
+     ]
+    ],
+    "walls": [
+     {
+      "type": "open",
+      "side": "north",
+      "from": 0,
+      "to": 12
+     },
+     {
+      "type": "open",
+      "side": "south",
+      "from": 0,
+      "to": 12
+     },
+     {
+      "type": "open",
+      "side": "east",
+      "from": 0,
+      "to": 12
+     },
+     {
+      "type": "open",
+      "side": "west",
+      "from": 0,
+      "to": 12
+     }
+    ],
+    "roof": null
+   }
   }
  ],
  "units": "cm"

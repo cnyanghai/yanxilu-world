@@ -2,6 +2,7 @@
 """资产导入一条命令（design/studio/proposals/06 第三条；目录规范照暗黑 2 重制版：一件资产一个目录 + 定义 JSON）。
 
 用法：
+  python3 tools/asset_import.py --components <Blender 分离式导出目录> --pack song   # 组件模式（营地小试），见 import_components
   python3 tools/asset_import.py <glb|gltf.json|图片> --id desk --kind furniture [--pack modern] [--fit h|wh|wdh] [--prompt "..."]
 步骤（任何一步不过就拒绝入库并说明）：
   1. 图片 → 先走 Rodin（tools/fal_image3d.py，PBR 材质）出 glb
@@ -80,7 +81,87 @@ def tri_count(g):
     return n
 
 
+COMPONENT_BUDGET = {  # 建筑组件与散布物的面数上限（三角面；ASSET-SPEC 10.1，2026-11-04 加收头、散布物、灯笼）
+    "post": 300, "beam": 200, "wall_plain": 800, "wall_plain_mir": 800, "wall_plain_full": 800, "wall_door": 900, "wall_window": 1000,
+    "door_leaf": 400, "gable": 400, "roof_thatch": 1500, "roof_verge_l": 800, "roof_verge_r": 800, "ridge": 600,
+    "ridge_end_l": 300, "ridge_end_r": 300, "rock_0": 500, "rock_1": 500, "rock_2": 500, "rock_3": 500,
+    "step_0": 300, "step_1": 300, "step_2": 300, "grass_tuft": 50, "lantern": 300}
+
+
+def import_components(src, pack, tex_dir):
+    """组件模式（营地小试）：Blender 分离式导出（export_kit.py）→ 入库。和家具模式的区别：
+    不挪原点、不缩放（组件原点是定好的：屋面在脊线、门扇在门轴）；贴图不嵌进 JSON，按文件名去重放到 packs/<包>/tex/（几件共用一份），
+    法线 PNG 转 JPEG；带透明的小图（散草、草丛）内嵌并改成透明裁切；几何内嵌；去掉多余的第二组顶点色。
+    同时落位预制体（prefabs/）、散布表与地面分层图（ground/）、地面贴图。"""
+    from PIL import Image
+    import io
+    src = Path(src); kinds = json.loads((src / "kinds.json").read_text())
+    base = ROOT / "world/packs" / pack; texd = base / "tex"; texd.mkdir(parents=True, exist_ok=True)
+    props_p = ROOT / "world/data/props.json"; props = json.loads(props_p.read_text(encoding="utf-8"))
+    rows, bad, tex_seen = [], [], {}
+
+    def put_tex(path: Path):
+        """贴图进公用目录，返回文件名；PNG 无透明 → JPEG。"""
+        im = Image.open(path); name = path.stem + ".jpg"
+        if name not in tex_seen:
+            im.convert("RGB").save(texd / name, "JPEG", quality=85, optimize=True, progressive=True)   # 网页用 85；法线 PNG 也转 JPEG
+            tex_seen[name] = (texd / name).stat().st_size
+        return name
+
+    for gl in sorted(src.glob("*.gltf")):
+        cid = gl.stem; kind = kinds.get(cid, "building")
+        g = json.loads(gl.read_text(encoding="utf-8")); buf = bytearray((src / g["buffers"][0]["uri"]).read_bytes())
+        tris = tri_count(g); budget = COMPONENT_BUDGET.get(cid, 1500)
+        if tris > budget * 1.15:
+            bad.append(f"{cid} {tris} 面超预算 {budget}"); continue
+        alpha_imgs = set()
+        for i, im in enumerate(g.get("images", [])):
+            p = src / im["uri"]; pil = Image.open(p)
+            if pil.mode in ("RGBA", "LA") and pil.getchannel("A").getextrema()[0] < 250:
+                bio = io.BytesIO(); pil.save(bio, "PNG", optimize=True)
+                im["uri"] = "data:image/png;base64," + base64.b64encode(bio.getvalue()).decode(); im["mimeType"] = "image/png"; alpha_imgs.add(i)
+            else:
+                im["uri"] = "../../tex/" + put_tex(p); im["mimeType"] = "image/jpeg"
+        tex_of = {t_i: t["source"] for t_i, t in enumerate(g.get("textures", []))}
+        for m in g.get("materials", []):
+            bc = m.get("pbrMetallicRoughness", {}).get("baseColorTexture")
+            if bc and tex_of.get(bc["index"]) in alpha_imgs:
+                m["alphaMode"] = "MASK"; m["alphaCutoff"] = 0.5; m["doubleSided"] = True
+        for mesh in g.get("meshes", []):
+            for pr in mesh["primitives"]:
+                pr["attributes"].pop("COLOR_1", None)
+        lo, hi = bbox(g, buf)
+        dest = base / kind / cid; dest.mkdir(parents=True, exist_ok=True)
+        write_gltf_json(dest / f"{cid}.gltf.json", g, buf)
+        fp = {"w": round((hi[0] - lo[0]) * 100), "d": round((hi[2] - lo[2]) * 100), "h": round((hi[1] - lo[1]) * 100)}
+        texs = sorted({im["uri"].split("/")[-1] for im in g.get("images", []) if not im["uri"].startswith("data:")})
+        definition = {"format": 1, "units": "cm", "id": cid, "kind": kind, "pack": pack,
+                      "components": {"Model": {"file": f"{cid}.gltf.json", "tris": tris, "textures": texs, "origin": "authored"}, "Footprint": fp},
+                      "import": {"source": str(gl), "tris": {"after": tris, "budget": budget}, "bbox_m": [[round(v, 3) for v in lo], [round(v, 3) for v in hi]]}}
+        (dest / f"{cid}.json").write_text(json.dumps(definition, ensure_ascii=False, indent=1), encoding="utf-8")
+        rel = f"packs/{pack}/{kind}/{cid}"
+        props["assets"][cid] = {"model": f"{rel}/{cid}.gltf.json", "def": f"{rel}/{cid}.json", "tris": tris, "kind": kind, "pack": pack, "status": "imported"}
+        rows.append((cid, kind, tris, budget, (dest / f"{cid}.gltf.json").stat().st_size // 1024))
+    props_p.write_text(json.dumps(props, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    # 预制体、散布表、地面
+    (base / "prefabs").mkdir(exist_ok=True); shutil.copy(src / "shed.prefab.json", base / "prefabs" / "shed.json")
+    gd = base / "ground"; gd.mkdir(exist_ok=True); td = Path(tex_dir)
+    shutil.copy(td / "scatter.json", gd / "scatter.json")
+    Image.open(td / "ground_mask.png").convert("RGB").save(gd / "ground_mask.jpg", "JPEG", quality=95)
+    for n in ("ground_dirt.jpg", "ground_grass.jpg", "ground_dirt_n.png", "ground_grass_n.png"):
+        put_tex(td / n)
+    for r in rows:
+        print(f"[入库] {r[1]:8s} {r[0]:16s} {r[2]:5d} 面 / {r[3]}  {r[4]} KB")
+    print(f"[贴图] {len(tex_seen)} 张共 {sum(tex_seen.values()) // 1024} KB → {texd.relative_to(ROOT)}")
+    if bad:
+        print("[拒收]", "；".join(bad)); sys.exit(1)
+
+
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--components":
+        ap = argparse.ArgumentParser(); ap.add_argument("--components", required=True); ap.add_argument("--pack", required=True)
+        ap.add_argument("--tex-dir", default="/mnt/c/Users/cnyan/blender_mcp/tex")
+        a = ap.parse_args(); import_components(a.components, a.pack, a.tex_dir); return
     ap = argparse.ArgumentParser()
     ap.add_argument("src"); ap.add_argument("--id", required=True); ap.add_argument("--kind", required=True, choices=list(BUDGET))
     ap.add_argument("--pack", default="modern"); ap.add_argument("--fit", default="h", help="h 按高等比；wh / wdh 按宽深各轴拉伸")

@@ -1,0 +1,44 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "beam",
+ "kind": "building",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "beam.gltf.json",
+   "tris": 44,
+   "textures": [
+    "beam_f.jpg",
+    "beam_f_n.jpg",
+    "beam_s.jpg",
+    "beam_s_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 200,
+   "d": 16,
+   "h": 16
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/beam.gltf",
+  "tris": {
+   "after": 44,
+   "budget": 200
+  },
+  "bbox_m": [
+   [
+    -1,
+    0,
+    -0.08
+   ],
+   [
+    1,
+    0.16,
+    0.08
+   ]
+  ]
+ }
+}

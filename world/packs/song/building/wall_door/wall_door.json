@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "wall_door",
+ "kind": "building",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "wall_door.gltf.json",
+   "tris": 264,
+   "textures": [
+    "post_f.jpg",
+    "post_f_n.jpg",
+    "wall_door_f.jpg",
+    "wall_door_f_n.jpg",
+    "wall_door_s.jpg",
+    "wall_door_s_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 200,
+   "d": 16,
+   "h": 220
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/wall_door.gltf",
+  "tris": {
+   "after": 264,
+   "budget": 900
+  },
+  "bbox_m": [
+   [
+    -1,
+    0,
+    -0.08
+   ],
+   [
+    1,
+    2.2,
+    0.08
+   ]
+  ]
+ }
+}

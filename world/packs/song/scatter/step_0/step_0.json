@@ -1,0 +1,42 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "step_0",
+ "kind": "scatter",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "step_0.gltf.json",
+   "tris": 70,
+   "textures": [
+    "rock.jpg",
+    "rock_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 211,
+   "d": 153,
+   "h": 9
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/step_0.gltf",
+  "tris": {
+   "after": 70,
+   "budget": 300
+  },
+  "bbox_m": [
+   [
+    -1.061,
+    -0.04,
+    -0.742
+   ],
+   [
+    1.05,
+    0.045,
+    0.784
+   ]
+  ]
+ }
+}

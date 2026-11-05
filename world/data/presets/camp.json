@@ -1,0 +1,110 @@
+{
+ "format": 1,
+ "room": "camp",
+ "pack": "song",
+ "units": "cm",
+ "entities": [
+  {
+   "id": "shed",
+   "name": "茅草偏屋",
+   "components": {
+    "Transform": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "Prefab": {
+     "file": "packs/song/prefabs/shed.json"
+    }
+   }
+  },
+  {
+   "id": "ground",
+   "name": "地面",
+   "components": {
+    "Transform": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "Ground": {
+     "size": 1200,
+     "mask": "packs/song/ground/ground_mask.jpg",
+     "layers": [
+      {
+       "name": "土",
+       "alb": "packs/song/tex/ground_dirt.jpg",
+       "nrm": "packs/song/tex/ground_dirt_n.jpg",
+       "tiling": 200
+      },
+      {
+       "name": "草",
+       "alb": "packs/song/tex/ground_grass.jpg",
+       "nrm": "packs/song/tex/ground_grass_n.jpg",
+       "tiling": 200
+      }
+     ],
+     "damp": 0.42,
+     "extent": 4000
+    }
+   }
+  },
+  {
+   "id": "scatter",
+   "name": "草丛、石块、踏步石",
+   "components": {
+    "Transform": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "Scatter": {
+     "file": "packs/song/ground/scatter.json",
+     "axes": "blender",
+     "models": {
+      "tufts": [
+       "grass_tuft"
+      ],
+      "stones": [
+       "rock_0",
+       "rock_1",
+       "rock_2",
+       "rock_3"
+      ],
+      "steps": [
+       "step_0",
+       "step_1",
+       "step_2"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "campfire_light",
+   "name": "篝火的光（模型待做）",
+   "components": {
+    "Transform": {
+     "x": 290,
+     "y": 35,
+     "z": -340
+    },
+    "Light": {
+     "kind": "point",
+     "color": [
+      1.0,
+      0.706,
+      0.478
+     ],
+     "power": 330,
+     "radius": 30,
+     "shadow": false,
+     "periods": [
+      "dusk",
+      "night"
+     ]
+    }
+   }
+  }
+ ]
+}

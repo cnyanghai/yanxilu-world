@@ -368,7 +368,7 @@ def build_all():
             for o in [o for o in bpy.data.objects if o.data == old]:
                 bpy.data.objects.remove(o, do_unlink=True)
             bpy.data.meshes.remove(old)
-    for m in [m for m in bpy.data.materials if m.name.startswith("m_") and m.name != "m_ground"]:
+    for m in [m for m in bpy.data.materials if m.name.startswith("m_") and m.name not in ("m_ground", "m_lantern", "m_person")]:
         bpy.data.materials.remove(m)
     for k, fn in BUILD.items():
         out[k] = fn(); out[k].name = k

@@ -18,6 +18,10 @@
   "yard": {
    "day": "amb_yard_wind_birds",
    "night": "amb_yard_crickets"
+  },
+  "camp": {
+   "day": "amb_yard_wind_birds",
+   "night": "amb_yard_crickets"
   }
  },
  "emitters": [

@@ -37,6 +37,198 @@
    "kind": "furniture",
    "status": "imported",
    "fit": "h"
+  },
+  "beam": {
+   "model": "packs/song/building/beam/beam.gltf.json",
+   "def": "packs/song/building/beam/beam.json",
+   "tris": 44,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "door_leaf": {
+   "model": "packs/song/building/door_leaf/door_leaf.gltf.json",
+   "def": "packs/song/building/door_leaf/door_leaf.json",
+   "tris": 44,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "gable": {
+   "model": "packs/song/building/gable/gable.gltf.json",
+   "def": "packs/song/building/gable/gable.json",
+   "tris": 32,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "grass_tuft": {
+   "model": "packs/song/scatter/grass_tuft/grass_tuft.gltf.json",
+   "def": "packs/song/scatter/grass_tuft/grass_tuft.json",
+   "tris": 6,
+   "kind": "scatter",
+   "pack": "song",
+   "status": "imported"
+  },
+  "lantern": {
+   "model": "packs/song/prop/lantern/lantern.gltf.json",
+   "def": "packs/song/prop/lantern/lantern.json",
+   "tris": 64,
+   "kind": "prop",
+   "pack": "song",
+   "status": "imported"
+  },
+  "post": {
+   "model": "packs/song/building/post/post.gltf.json",
+   "def": "packs/song/building/post/post.json",
+   "tris": 44,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "ridge": {
+   "model": "packs/song/building/ridge/ridge.gltf.json",
+   "def": "packs/song/building/ridge/ridge.json",
+   "tris": 24,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "ridge_end_l": {
+   "model": "packs/song/building/ridge_end_l/ridge_end_l.gltf.json",
+   "def": "packs/song/building/ridge_end_l/ridge_end_l.json",
+   "tris": 83,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "ridge_end_r": {
+   "model": "packs/song/building/ridge_end_r/ridge_end_r.gltf.json",
+   "def": "packs/song/building/ridge_end_r/ridge_end_r.json",
+   "tris": 83,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "rock_0": {
+   "model": "packs/song/scatter/rock_0/rock_0.gltf.json",
+   "def": "packs/song/scatter/rock_0/rock_0.json",
+   "tris": 320,
+   "kind": "scatter",
+   "pack": "song",
+   "status": "imported"
+  },
+  "rock_1": {
+   "model": "packs/song/scatter/rock_1/rock_1.gltf.json",
+   "def": "packs/song/scatter/rock_1/rock_1.json",
+   "tris": 320,
+   "kind": "scatter",
+   "pack": "song",
+   "status": "imported"
+  },
+  "rock_2": {
+   "model": "packs/song/scatter/rock_2/rock_2.gltf.json",
+   "def": "packs/song/scatter/rock_2/rock_2.json",
+   "tris": 320,
+   "kind": "scatter",
+   "pack": "song",
+   "status": "imported"
+  },
+  "rock_3": {
+   "model": "packs/song/scatter/rock_3/rock_3.gltf.json",
+   "def": "packs/song/scatter/rock_3/rock_3.json",
+   "tris": 320,
+   "kind": "scatter",
+   "pack": "song",
+   "status": "imported"
+  },
+  "roof_thatch": {
+   "model": "packs/song/building/roof_thatch/roof_thatch.gltf.json",
+   "def": "packs/song/building/roof_thatch/roof_thatch.json",
+   "tris": 980,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "roof_verge_l": {
+   "model": "packs/song/building/roof_verge_l/roof_verge_l.gltf.json",
+   "def": "packs/song/building/roof_verge_l/roof_verge_l.json",
+   "tris": 532,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "roof_verge_r": {
+   "model": "packs/song/building/roof_verge_r/roof_verge_r.gltf.json",
+   "def": "packs/song/building/roof_verge_r/roof_verge_r.json",
+   "tris": 532,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "step_0": {
+   "model": "packs/song/scatter/step_0/step_0.gltf.json",
+   "def": "packs/song/scatter/step_0/step_0.json",
+   "tris": 70,
+   "kind": "scatter",
+   "pack": "song",
+   "status": "imported"
+  },
+  "step_1": {
+   "model": "packs/song/scatter/step_1/step_1.gltf.json",
+   "def": "packs/song/scatter/step_1/step_1.json",
+   "tris": 70,
+   "kind": "scatter",
+   "pack": "song",
+   "status": "imported"
+  },
+  "step_2": {
+   "model": "packs/song/scatter/step_2/step_2.gltf.json",
+   "def": "packs/song/scatter/step_2/step_2.json",
+   "tris": 70,
+   "kind": "scatter",
+   "pack": "song",
+   "status": "imported"
+  },
+  "wall_door": {
+   "model": "packs/song/building/wall_door/wall_door.gltf.json",
+   "def": "packs/song/building/wall_door/wall_door.json",
+   "tris": 264,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "wall_plain": {
+   "model": "packs/song/building/wall_plain/wall_plain.gltf.json",
+   "def": "packs/song/building/wall_plain/wall_plain.json",
+   "tris": 44,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "wall_plain_full": {
+   "model": "packs/song/building/wall_plain_full/wall_plain_full.gltf.json",
+   "def": "packs/song/building/wall_plain_full/wall_plain_full.json",
+   "tris": 44,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "wall_plain_mir": {
+   "model": "packs/song/building/wall_plain_mir/wall_plain_mir.gltf.json",
+   "def": "packs/song/building/wall_plain_mir/wall_plain_mir.json",
+   "tris": 44,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
+  },
+  "wall_window": {
+   "model": "packs/song/building/wall_window/wall_window.gltf.json",
+   "def": "packs/song/building/wall_window/wall_window.json",
+   "tris": 660,
+   "kind": "building",
+   "pack": "song",
+   "status": "imported"
   }
  },
  "palette": {

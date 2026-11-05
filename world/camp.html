@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="研习录小世界 · 营地小试：宋代茅草偏屋第一次进引擎（实时光、地面分层、散布）。">
+<title>研习录 · 营地小试</title>
+<!-- 营地小试（2026-11-05）：world/camp.js。和 index.html 同一套自带 three.js，不走 CDN。网址参数 ?shot=wide|close|detail&period=day|night -->
+<script>(function(){var p=location.pathname;if(/camp(\.html)?$/.test(p)){}else if(!/\/$/.test(p))document.write('<base href="'+p.replace(/[^\w\-\/.~%]/g,'')+'/">');})();</script>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./vendor/fonts/fonts.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+<style>
+html,body{margin:0;height:100%;background:#17110C;color:#EDE0C4;font:14px/1.5 "Noto Serif SC","Songti SC",serif;overflow:hidden}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+#hud{position:fixed;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#hud button{font:inherit;color:#EDE0C4;background:rgba(23,17,12,.72);border:1px solid #7E5A1E;border-radius:4px;padding:3px 10px;cursor:pointer}
+#hud b{font-weight:600;margin-right:6px}
+#st{position:fixed;left:12px;bottom:10px;font-size:12px;opacity:.75}
+body.shot #hud,body.shot #st{display:none}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="hud"><b>营地小试</b>
+  <button data-period="day">白天</button><button data-period="night">夜晚</button>
+  <button data-shot="wide">远景</button><button data-shot="close">近景</button><button data-shot="detail">细节</button>
+</div>
+<div id="st">加载中…</div>
+<script>if(/[?&]shot=/.test(location.search)&&/[?&]clean=1/.test(location.search))document.body.classList.add("shot");</script>
+<script type="module" src="./camp.js"></script>
+</body>
+</html>
