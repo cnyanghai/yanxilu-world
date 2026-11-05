@@ -8,6 +8,7 @@ export class Composite {
     this.renderer = renderer; this.rt = null; this.samples = opts.samples ?? 4;   /* 软渲染（swiftshader）下多重采样的深度图读不出来，排练场景页传 0 */
     this.scene = new THREE.Scene(); this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.mat = new THREE.ShaderMaterial({
+      defines: { AO_SAMPLES: opts.aoSamples ?? 16 },   /* 环境遮蔽采样数：桌面 16、手机档 8 */
       uniforms: {
         tDiffuse: { value: null }, tDepth: { value: null }, uTexel: { value: new THREE.Vector2() },
         uNear: { value: 0.5 }, uFar: { value: 600 },
@@ -33,17 +34,17 @@ export class Composite {
           float ign = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
           vec3 t = normalize(cross(n, abs(n.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0))), b = cross(n, t);
           float occ = 0.0;
-          for (int i = 0; i < 16; i++) {
-            float fi = float(i) + 0.5, a = fi * 2.399963 + ign * 6.2832, r = sqrt(fi / 16.0);
+          for (int i = 0; i < AO_SAMPLES; i++) {
+            float fi = float(i) + 0.5, a = fi * 2.399963 + ign * 6.2832, r = sqrt(fi / float(AO_SAMPLES));
             float h = fract(fi * 0.618034 + ign);
             vec3 dir = normalize(t * cos(a) * r + b * sin(a) * r + n * (0.15 + h));
-            vec3 s = p + dir * uAORadius * mix(0.2, 1.0, fi / 16.0);
+            vec3 s = p + dir * uAORadius * mix(0.2, 1.0, fi / float(AO_SAMPLES));
             vec2 suv = (s.xy / (-s.z) / uTanHalf) * 0.5 + 0.5;
             if (suv.x < 0.0 || suv.y < 0.0 || suv.x > 1.0 || suv.y > 1.0) continue;
             float sd = linDepth(suv), behind = (-s.z) - sd;
             occ += step(0.02, behind) * (1.0 - smoothstep(uAORadius, uAORadius * 2.5, behind));
           }
-          return 1.0 - uAO * occ / 16.0;
+          return 1.0 - uAO * occ / float(AO_SAMPLES);
         }
         vec3 kuwahara(){
           const int R = 3; vec3 m0=vec3(0.),m1=vec3(0.),m2=vec3(0.),m3=vec3(0.),s0=vec3(0.),s1=vec3(0.),s2=vec3(0.),s3=vec3(0.);

@@ -30,7 +30,9 @@ python3 tools/tables_check.py              # 表校验（先跑）
 python3 tools/baba_mock.py 8790            # 本地静态与接口（另开终端）
 python3 tools/tests/world_test.py          # 四景别截图、三种光、draw call 数（自己起模拟服务器，约 3 分钟，单独跑）
 bash tools/blender/bake.sh                 # 重新烘焙壳（约 10 分钟，显卡）
-python3 tools/tests/camp_shot.py           # 营地真显卡截图（Windows Chrome 远程调试；--sw 软件渲染），白天 / 夜晚 × 三机位 + 明度
+python3 tools/tests/camp_shot.py           # 营地真显卡截图（Windows Chrome 远程调试；--sw 软件渲染；--tier N、--mobile 手机竖屏），白天 / 夜晚 × 四机位 + 明度 + 下载量与 draw call
+node tools/tests/walk_check.mjs camp        # 人形巡检（门洞净高、走得到、无孤岛），出俯视图
+bash tools/vendor_min.sh                   # three 换版本后重出压缩版（系统 terser）
 ```
 Windows 上 `python3` 换 `python`。截图在 `tools/out/`。gltf-transform 要 node ≥ 22（`~/.nvm/versions/node/v24*`）。
 

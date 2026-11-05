@@ -37,6 +37,7 @@
 - 旧化走顶点色（线性浮点，glTF COLOR_0），不另出贴图。
 - 1 档（手机）：同一预制体的组件合成一张图集（alb / nrm / orm 各一张），一个预制体一到两个材质；2 档以上：主角件（主屋、角色、商店物件）保留独立三件套，其余组件仍走图集。
 - 图集由 asset_import 在登记预制体时打，不手拼。
+- 已做（2026-11-05 营地手机档）：贴图两套分辨率（`tex/` 给 2 档、`tex_lo/` 半分辨率给 0、1 档，入库时一起出）；引擎里静态件按材质合并代替图集，draw call 已在 1 档预算一半以内。图集等件数多、按材质合并不够时再做（劈柴、石块这类 UV 回绕的件要单列）。
 
 ## 2. 摆（预制体、预设、地面）
 
@@ -67,7 +68,7 @@
 ## 6. 工具清单
 
 已有：asset_import、asset_shrink、fal_image3d、tables_check、world_test、paint_verify、bake.sh、d2_decode（研究用）。
-已转正：明度量尺 tools/tests/measure.py（2026-11-04）；材质板合成 tools/blender/song_kit/materials.py（2026-11-04）；组件导出 tools/blender/song_kit/export_kit.py 与组件入库 asset_import --components（2026-11-05）；真显卡截图 tools/tests/camp_shot.py（Windows Chrome 远程调试，连不上退回软件渲染，2026-11-05）；Blender 看光 tools/blender/song_kit/light.py（资产在 Eevee 下按 vis 打白天 / 夜晚出图）。
+已转正：明度量尺 tools/tests/measure.py（2026-11-04）；three 压缩版 tools/vendor_min.sh 与 camp_shot.py 的 --tier / --mobile 下载量与 draw call 报告（2026-11-05）；材质板合成 tools/blender/song_kit/materials.py（2026-11-04）；组件导出 tools/blender/song_kit/export_kit.py 与组件入库 asset_import --components（2026-11-05）；真显卡截图 tools/tests/camp_shot.py（Windows Chrome 远程调试，连不上退回软件渲染，2026-11-05）；Blender 看光 tools/blender/song_kit/light.py（资产在 Eevee 下按 vis 打白天 / 夜晚出图）。
 排练里写的、要转正的：prefab 组装（prepare / finish 的我们版）、场景看图页（scene.html → tools/tests/asset_view.py）。
 没有的：摆放编辑器、散布工具、环境图烘焙、状态机与时间线的播放器、图集打包、镂空率量尺。（人形巡检 walk_check.mjs 2026-11-05 已写）
 

@@ -8,9 +8,9 @@
 <!-- 营地小试（2026-11-05）：world/camp.js。和 index.html 同一套自带 three.js，不走 CDN。网址参数 ?shot=wide|close|detail&period=day|night -->
 <script>(function(){var p=location.pathname;if(/camp(\.html)?$/.test(p)){}else if(!/\/$/.test(p))document.write('<base href="'+p.replace(/[^\w\-\/.~%]/g,'')+'/">');})();</script>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="./vendor/fonts/fonts.css">
+<!-- 营地页不加载 fonts.css（内嵌字体 1.3 MB，这页只有几个按钮），用系统衬线字体 -->
 <script type="importmap">
-{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+{ "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
 <style>
 html,body{margin:0;height:100%;background:#17110C;color:#EDE0C4;font:14px/1.5 "Noto Serif SC","Songti SC",serif;overflow:hidden}

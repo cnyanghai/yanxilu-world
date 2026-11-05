@@ -4,6 +4,7 @@
    - 烟：一片始终朝向镜头的竖面（只绕竖轴转），噪声做出往上飘散的烟柱，普通混合。
    定义来自 packs/<包>/vfx/<名>.json（预设里 Vfx 组件指过去）；mode 三档：off 灭、smolder 余烬冒烟、burn 烧旺。 */
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const NOISE = `
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -11,14 +12,16 @@ const NOISE = `
     return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }
   float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; } return v; }`;
 
-function flameMaterial(seed, def) {
+/* 几片火焰面合成一个网格（手机档省 draw call，2026-11-05）：每片的随机种子放在顶点属性 aSeed 里 */
+function flameMaterial(def) {
   return new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uSeed: { value: seed }, uIntensity: { value: def.intensity ?? 6 }, uLevel: { value: 1 },
+    uniforms: { uTime: { value: 0 }, uIntensity: { value: def.intensity ?? 6 }, uLevel: { value: 1 },
                 uLow: { value: new THREE.Color(def.colors?.[0] ?? "#ff3a08") }, uMid: { value: new THREE.Color(def.colors?.[1] ?? "#ff9a2e") },
                 uHot: { value: new THREE.Color(def.colors?.[2] ?? "#fff0b8") } },
-    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `uniform float uTime, uSeed, uIntensity, uLevel; uniform vec3 uLow, uMid, uHot; varying vec2 vUv; ${NOISE}
+    vertexShader: `attribute float aSeed; varying vec2 vUv; varying float vSeed; void main(){ vUv = uv; vSeed = aSeed; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform float uTime, uIntensity, uLevel; uniform vec3 uLow, uMid, uHot; varying vec2 vUv; varying float vSeed; ${NOISE}
       void main(){
+        float uSeed = vSeed;
         /* 噪声减高度：噪声高的地方火舌蹿得高，往上自然断开成几条；外包络底宽上窄 */
         float t = uTime * 1.6 + uSeed * 7.3, x = (vUv.x - 0.5) * 2.0, y = vUv.y / max(uLevel, 0.05);
         float n = fbm(vec2(x * 2.2 + uSeed * 3.1, y * 2.6 - t)) + 0.35 * fbm(vec2(x * 5.0 - uSeed, y * 5.0 - t * 1.8));
@@ -77,12 +80,13 @@ export class Fire {
   constructor(def) {
     this.def = def; this.group = new THREE.Group(); this.group.name = "vfx-" + (def.id || "fire"); this.mode = "off";
     const F = def.flame, S = def.smoke;
-    this.flames = [];
-    for (let i = 0; i < (F.planes ?? 3); i++) {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(F.radius * 2, F.height), flameMaterial(i * 1.37 + 0.2, F));
-      m.geometry.translate(0, F.height / 2 + (F.base ?? 0), 0); m.rotation.y = (Math.PI / (F.planes ?? 3)) * i; m.renderOrder = 10; m.frustumCulled = false;
-      this.group.add(m); this.flames.push(m);
+    const n = F.planes ?? 3, planes = [];
+    for (let i = 0; i < n; i++) {
+      const g = new THREE.PlaneGeometry(F.radius * 2, F.height); g.translate(0, F.height / 2 + (F.base ?? 0), 0); g.rotateY((Math.PI / n) * i);
+      g.setAttribute("aSeed", new THREE.Float32BufferAttribute(new Array(g.attributes.position.count).fill(i * 1.37 + 0.2), 1)); planes.push(g);
     }
+    const fm = new THREE.Mesh(mergeGeometries(planes), flameMaterial(F)); fm.renderOrder = 10; fm.frustumCulled = false;
+    this.group.add(fm); this.flames = [fm];
     this.sparks = def.sparks ? sparks(def.sparks) : null; if (this.sparks) { this.sparks.renderOrder = 11; this.group.add(this.sparks); }
     this.smoke = null;
     if (S) {

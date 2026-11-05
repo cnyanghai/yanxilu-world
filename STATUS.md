@@ -2,8 +2,8 @@
 type: status
 status: active
 cluster: product
-stage: M1 进行中，画质门 2026-11-05 已过（营地引擎截图，用户判对照墙分过 3.5）；当前交付物是宋代营地一周小试剩余：1 档优化、PIPELINE 去草案（火焰、人形巡检 2026-11-05 已做）（篝火 2026-11-05 已 Blender 程序建进引擎；Rodin 正规接光挪到营地切片的有机件）
-next: 1 档：半分辨率 + 图集 + 预制体合批（13 MB → 8 MB、190 → 120 draw call）→ PIPELINE 去草案 → M1 收尾，进营地切片
+stage: M1 进行中，画质门 2026-11-05 已过（营地引擎截图，用户判对照墙分过 3.5）；当前交付物是宋代营地一周小试剩余：PIPELINE 去草案（火焰、人形巡检、手机档优化 2026-11-05 已做）（篝火 2026-11-05 已 Blender 程序建进引擎；Rodin 正规接光挪到营地切片的有机件）
+next: PIPELINE 去草案（把营地小试走过的流程定稿）→ 删 tools/out/d2r_local → M1 收尾，进营地切片；真手机上量一次帧率
 blocked_by: 无（服务器新克隆的每 5 分钟 git pull 由用户照书架那条加）
 updated: 2026-11-05
 ---
@@ -72,6 +72,7 @@ updated: 2026-11-05
 
 ## 日志
 
+- 2026-11-05 手机档优化（用户「做手机档优化」）：先量，实际下载 24 MB（同一贴图被多件模型重复下载、字体 1.3 MB、three 未压缩 2.1 MB）、197 draw call。改：three 缓存去重（贴图地址规整成绝对路径）、入库多出半分辨率 tex_lo/ 且透明图改共用 PNG、three 用系统 terser 压缩版（tools/vendor_min.sh，npx 下载 esbuild 被安全规则拦下改用系统 terser，导出 444 项核对一致）、营地页不加载字体、偏屋静态件按材质合并、火焰四片合一、按档设阴影 / 环境遮蔽采样 / 像素密度、竖屏镜头后退（放宽视场角露出地面尽头，试过弃用）、地面铺 80 米。真显卡：桌面 2 档 14.3 MB / 59 到 75 draw call、明度与改前相同；手机 1 档 4.1 MB / 52 到 77；0 档 25 到 39。手机门槛（≤ 8 MB、≤ 120）过；书房回归测试通过；图集暂不做（合批已够、UV 回绕件进不了图集）。没在真手机测帧率。camp_shot.py 加 --tier / --mobile 与下载量报告。ASSET-SPEC 10.11、PIPELINE 1.7、技术卡十九
 - 2026-11-05 灯笼挂高 10 厘米（用户「先改灯笼高度」）：light.py 加 LANTERN_Z 1.82 与 EAVE_Z 2.15，吊绳按灯笼顶到檐底算（22 厘米），门边灯光跟着抬；export_kit 吊绳偏移改按物体相对位置；重新导出入库（重导时几件墙柱只有浮点末位噪声，已还原不提交）。巡检复查：灯笼下净空 1.59 → 1.69，其余不变、全过；画质数字不变
 - 2026-11-05 人形巡检（用户「做人形巡检」）：tools/tests/walk_check.mjs（Node 18，约 4 秒）读真实模型三角面，2.5 厘米采样算地面、挡身体、头顶净空，按引擎 25 厘米寻路格（world/sim/grid.js）判站立、A* 到 rooms.camp.walk 的四个目标、把每格走一遍，出 JSON 与俯视图；characters 表加 humanoid.collider，rooms 表加 camp.walk 与门洞机位。第一次跑查出门扇半开 28 度把屋里 81 格堵成孤岛 → 门扇加 Interact 三态（ajar / open / closed），寻路按走近推开的 open 算，--as-placed 仍报原样问题；门的开关动画进待办区。结果全过：1993 格全可达、门洞净高 1.95（= 1.5 × 1.3）、路线 531 米；提示灯笼下净空 1.59。camp.js 加 setState、figure、path，camp_shot.py --walk 推门放人形拍图。ASSET-SPEC 10.10、PIPELINE 1.5、技术卡十八
 - 2026-11-05 火焰（用户「做火焰」）：world/render/fire.js 程序化火（交叉竖面 + 噪声火舌、火星点精灵、正对镜头的烟柱），定义 packs/song/vfx/campfire.json，预设 Vfx 实体；按时段 smolder / burn（白天只冒烟）；灯加 flicker（篝火 0.18、灯笼 0.06），灯笼纸自发光跟着晃；光源抬到 80 厘米。调了四轮：亮度 5 时 AgX 压成粉白 → 1.8、火舌顶端被面片切平 → 顶端留余量、光源 35 / 45 / 60 厘米都把柴头照白 → 80。夜晚篝火机位过曝 0、远景死黑 12.8%，多 5 个 draw call。动图 tools/out/camp/campfire_night.gif。ASSET-SPEC 10.9、技术卡十七

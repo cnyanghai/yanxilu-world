@@ -1,8 +1,11 @@
 /* 营地小试（宋代田园包第一次进引擎，2026-11-05）：读表与预设，搭地面分层 + 散布 + 预制体（茅草偏屋）+ 灯，按 vis 切白天 / 夜晚。
    和 world.js（现代书房，烘焙无光照）不同：这里是实时光照的 PBR —— 一盏平行光带阴影、半球天光、局部点光、合成后期里的环境遮蔽。
-   网址参数：?shot=wide|close|detail&period=day|night&sw=1（软件渲染：不开多重采样）。单位：表里厘米，场景里米；three 轴向，偏屋正面朝 -z。 */
+   网址参数：?shot=wide|close|detail|fire|door&period=day|night&sw=1（软件渲染：不开多重采样）&tier=0|1|2&tex=lo|hi。单位：表里厘米，场景里米；three 轴向，偏屋正面朝 -z。
+   分档（2026-11-05 手机档优化，render/tiers.js 的 TIER_BUDGET）：0 档无阴影无后期、1 档一盏阴影 2048 + 后期（环境遮蔽 8 采样）、2 档阴影 4096 + 后期 16 采样；
+   0、1 档用半分辨率贴图 tex_lo/；偏屋的静态件按材质合并成少数几个网格；像素密度 0 档 1、1 档 ≤ 1.5、2 档 ≤ 2。 */
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { loadTables } from "./data/tables.js";
 import { detectTier } from "./render/tiers.js";
 import { Composite } from "./render/post.js";
@@ -11,8 +14,8 @@ import { Fire, flicker } from "./render/fire.js";
 const Q = new URLSearchParams(location.search);
 const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: true });
-renderer.setPixelRatio(Q.has("shot") ? 1 : Math.min(devicePixelRatio || 1, 2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;   /* 0.186 起 PCFSoft 已去掉，回退到这个 */
+renderer.shadowMap.type = THREE.PCFShadowMap;   /* 0.186 起 PCFSoft 已去掉，回退到这个 */
+THREE.Cache.enabled = true;   /* 同一张贴图被几件模型引用时只下载一次（图片加载器把下载中的请求也记在缓存里） */
 renderer.toneMapping = THREE.AgXToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
 const EXPOSURE = 0.33;                                   /* 全时段恒定（vis.mapping_camp）；Blender 白天是 -1.15 档（0.45），three 的天光无遮挡、AgX 实现也不同，真显卡量过后压到 0.33 */
 renderer.toneMappingExposure = EXPOSURE; renderer.info.autoReset = false;   /* draw call 按整帧累计（场景 + 阴影 + 合成） */
@@ -21,16 +24,22 @@ const camera = new THREE.PerspectiveCamera(9.5, 1.6, 1, 200);
 const T = await loadTables("./");
 if (T.problems.length) console.warn("表校验问题", T.problems);
 const ROOM = T.rooms.camp, PRESET = T.presets.camp;
-const isMobile = Math.min(innerWidth, innerHeight) < 700;
+const isMobile = Math.min(innerWidth, innerHeight) < 700 || /Mobi|Android/i.test(navigator.userAgent);
 const TIER = detectTier(renderer, { isMobile });
-const composite = TIER >= 1 ? new Composite(renderer, { samples: Q.get("sw") ? 0 : 4 }) : null;
-const gltf = new GLTFLoader(), tl = new THREE.TextureLoader();
+renderer.setPixelRatio(Q.has("shot") ? 1 : Math.min(devicePixelRatio || 1, [1, 1.5, 2][TIER]));
+renderer.shadowMap.enabled = TIER >= 1;
+const composite = TIER >= 1 ? new Composite(renderer, { samples: Q.get("sw") ? 0 : 4, aoSamples: TIER >= 2 ? 16 : 8 }) : null;
+/* 贴图分档：0、1 档换成半分辨率的 tex_lo/；路径先规整成绝对地址（几件模型从不同目录用 ../../tex/ 引用同一张图，缓存要认得出是同一张） */
+const TEX_LO = Q.get("tex") ? Q.get("tex") === "lo" : TIER < 2;
+const texURL = (u) => { const a = new URL(u, location.href).href; return TEX_LO ? a.replace("/tex/", "/tex_lo/") : a; };
+const manager = new THREE.LoadingManager(); manager.setURLModifier(texURL);
+const gltf = new GLTFLoader(manager), tl = new THREE.TextureLoader(manager);
 const getJSON = (u) => fetch(u, { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 const deg = THREE.MathUtils.degToRad;
 
 /* ---------- 光：平行光（太阳 / 月亮，带阴影）+ 半球天光 + 局部点光 ---------- */
 const sun = new THREE.DirectionalLight(0xffffff, 1); scene.add(sun, sun.target);
-sun.castShadow = true; sun.shadow.mapSize.setScalar(TIER >= 2 ? 4096 : 2048);
+sun.castShadow = TIER >= 1; sun.shadow.mapSize.setScalar(TIER >= 2 ? 4096 : 2048);
 Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 60 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1); scene.add(hemi);
 const locals = [], glowMats = [], fires = [], interact = {};
@@ -51,7 +60,7 @@ function applyT(o, t = {}) {
 const models = {};
 function model(id) {   /* props 表找文件，同一件只加载一次，克隆共用几何与材质 */
   const a = T.props.assets[id]; if (!a) return Promise.reject(new Error("props 里没有 " + id));
-  return models[id] ||= gltf.loadAsync("./" + a.model).then((g) => {
+  return models[id] ||= gltf.loadAsync(new URL("./" + a.model, location.href).href).then((g) => {
     g.scene.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true;
       const m = o.material; if (m.map) m.map.anisotropy = 8;
       const g = /lantern/.test(m.name) ? ["#ffc890", 12] : /ember/.test(m.name) ? ["#ff6a1f", 5] : null;   /* 灯笼纸、篝火的炭：夜里自发光（同 Blender 看光） */
@@ -67,14 +76,35 @@ async function placePrefab(e) {
     if (c.Model && c.Model.castShadow === false) o.traverse((m) => { m.castShadow = false; });
     if (c.Light) addLight(o, c.Light);
     if (c.Interact) interact[pe.id] = { o, I: c.Interact };
+    if (!c.Interact && !c.Light) o.userData.static = true;
   }));
+  mergeStatic(root);
   scene.add(root);
+}
+/* 静态件按材质合并（手机档优化）：偏屋 30 来个件、每件两三种材质，原来一件一种材质一个 draw call；同名材质（同一套贴图）的几何烘上变换后合成一个网格。
+   门（交互）、灯笼（带灯）不合并。合并后同名材质只留一份，贴图也只上传一次。 */
+function mergeStatic(root) {
+  root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), groups = new Map(), done = [];
+  for (const o of root.children) {
+    if (!o.userData.static) continue;
+    o.traverse((m) => {
+      if (!m.isMesh) return;
+      const g = m.geometry, key = m.material.name + "|" + Object.keys(g.attributes).sort().join(",") + (g.index ? "|i" : "|n");
+      const geo = g.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld));
+      if (!groups.has(key)) groups.set(key, { mat: m.material, geos: [], cast: false }); const G = groups.get(key); G.geos.push(geo); G.cast ||= m.castShadow;
+    });
+    done.push(o);
+  }
+  for (const o of done) root.remove(o);
+  for (const [key, G] of groups) {
+    const m = new THREE.Mesh(mergeGeometries(G.geos, false), G.mat); m.castShadow = G.cast; m.receiveShadow = true; m.name = "merged:" + key.split("|")[0]; root.add(m);
+  }
 }
 
 /* ---------- 地面分层：土为底，草按分层图 R 混入，G 压暗（潮处、路）；大尺度明暗用两道正弦 ---------- */
 function ground(e) {
   const G = e.components.Ground, S = G.size / 100, [L0, L1] = G.layers;
-  const tex = (u, srgb, rep) => { const t = tl.load("./" + u); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  const tex = (u, srgb, rep) => { const t = tl.load(new URL("./" + u, location.href).href); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
     if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.setScalar(rep); } return t; };
   const E = (G.extent || G.size) / 100, rep = (G.extent || G.size) / L0.tiling, geo = new THREE.PlaneGeometry(E, E); geo.rotateX(-Math.PI / 2);   /* 地面铺 extent，分层图只管中间 size，外圈沿用边缘值 */
   const mat = new THREE.MeshStandardMaterial({ map: tex(L0.alb, true, rep), normalMap: L0.nrm ? tex(L0.nrm, false, rep) : null, roughness: 0.95, metalness: 0 });
@@ -130,10 +160,13 @@ function setPeriod(pd) {
 
 /* ---------- 机位：rooms.camp.stations（与 world.js shotTowards 同一约定：方位角从 +z 起算） ---------- */
 let shot = Q.get("shot") || "wide";
+/* 机位按 16:10 横屏定；屏幕更窄（手机竖屏）时镜头往后退，让左右看到的范围不变，视场角不动（保住长焦的压缩感；放宽视场角会露出地面尽头，2026-11-05 试过） */
+const REF_ASPECT = 1.6;
 function setShot(k) {
   shot = k; const st = ROOM.stations[k], tg = new THREE.Vector3(...st.target.map((c) => c / 100)), a = deg(st.az), e = deg(st.el);
-  camera.position.copy(tg).add(new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).multiplyScalar(st.dist / 100));
-  camera.fov = st.fov; camera.near = Math.max(0.3, st.dist / 100 - 15); camera.far = st.dist / 100 + 40; camera.lookAt(tg); camera.updateProjectionMatrix();
+  const back = camera.aspect >= REF_ASPECT ? 1 : REF_ASPECT / camera.aspect, d = st.dist / 100 * back;
+  camera.position.copy(tg).add(new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).multiplyScalar(d));
+  camera.fov = st.fov; camera.near = Math.max(0.3, d - 15 * back); camera.far = d + 40 * back; camera.lookAt(tg); camera.updateProjectionMatrix();
 }
 
 /* ---------- 搭场景 ---------- */
@@ -148,8 +181,8 @@ await Promise.all(PRESET.entities.map((e) => {
   if (c.Light) { const g = new THREE.Group(); applyT(g, c.Transform); scene.add(g); addLight(g, c.Light); }
   return null;
 }));
-setPeriod(period); setShot(shot);
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+setPeriod(period);
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; setShot(shot); }
 addEventListener("resize", resize); resize();
 let frames = 0; const clock = new THREE.Clock();
 function frame() {
@@ -163,7 +196,9 @@ function frame() {
   requestAnimationFrame(frame);
 }
 function gpu() { const g = renderer.getContext(), x = g.getExtension("WEBGL_debug_renderer_info"); return x ? g.getParameter(x.UNMASKED_RENDERER_WEBGL) : "?"; }
-function stats() { const i = renderer.info.render; return `档位 ${TIER} · draw call ${i.calls} · 三角面 ${i.triangles.toLocaleString()} · 加载 ${((performance.now() - t0) / 1000).toFixed(1)} 秒 · ${gpu()}`; }
+/* 已下载字节（同源资源的压缩后正文大小；缓存命中的不算） */
+function bytes() { return performance.getEntriesByType("resource").reduce((s, r) => s + (r.encodedBodySize || 0), 0) + (performance.getEntriesByType("navigation")[0]?.encodedBodySize || 0); }
+function stats() { const i = renderer.info.render; return `档位 ${TIER} · 贴图 ${TEX_LO ? "半分辨率" : "原分辨率"} · draw call ${i.calls} · 三角面 ${i.triangles.toLocaleString()} · 下载 ${(bytes() / 1e6).toFixed(1)} MB · 加载 ${((performance.now() - t0) / 1000).toFixed(1)} 秒 · ${gpu()}`; }
 document.querySelectorAll("[data-period]").forEach((b) => b.addEventListener("click", () => setPeriod(b.dataset.period)));
 document.querySelectorAll("[data-shot]").forEach((b) => b.addEventListener("click", () => setShot(b.dataset.shot)));
 /* 人形巡检看图用（tools/tests/camp_shot.py --walk）：1.5 米灰色素模人形、地上一串蓝点标路线；坐标厘米，three 轴向 */
@@ -179,5 +214,5 @@ function path(points) {
   const im = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ color: 0x3f6fd8 }), points.length), m4 = new THREE.Matrix4();
   points.forEach((p, i) => im.setMatrixAt(i, m4.makeTranslation(p[0] / 100, 0.02, p[1] / 100))); im.name = "walk-path"; scene.add(im); return im;
 }
-window.__camp = { ready: () => ready, setPeriod, setShot, setState, figure, path, info: () => ({ ...renderer.info.render, tier: TIER, gpu: gpu() }), scene, renderer, camera };
+window.__camp = { ready: () => ready, setPeriod, setShot, setState, figure, path, info: () => ({ ...renderer.info.render, tier: TIER, gpu: gpu(), texLo: TEX_LO, bytes: bytes(), files: performance.getEntriesByType("resource").length }), scene, renderer, camera };
 frame();

@@ -91,21 +91,28 @@ COMPONENT_BUDGET = {  # 建筑组件与散布物的面数上限（三角面；AS
 def import_components(src, pack, tex_dir):
     """组件模式（营地小试）：Blender 分离式导出（export_kit.py）→ 入库。和家具模式的区别：
     不挪原点、不缩放（组件原点是定好的：屋面在脊线、门扇在门轴）；贴图不嵌进 JSON，按文件名去重放到 packs/<包>/tex/（几件共用一份），
-    法线 PNG 转 JPEG；带透明的小图（散草、草丛）内嵌并改成透明裁切；几何内嵌；去掉多余的第二组顶点色。
+    法线 PNG 转 JPEG；带透明的小图（散草、草丛）存共用 PNG 并改成透明裁切；几何内嵌；去掉多余的第二组顶点色。
+    贴图分档（2026-11-05 手机档优化）：tex/ 原分辨率给 2 档（桌面独显），tex_lo/ 长宽各半给 0、1 档（手机、核显），引擎按档位换目录。
     同时落位预制体（prefabs/）、散布表与地面分层图（ground/）、地面贴图。"""
     from PIL import Image
     import io
     src = Path(src); kinds = json.loads((src / "kinds.json").read_text())
     base = ROOT / "world/packs" / pack; texd = base / "tex"; texd.mkdir(parents=True, exist_ok=True)
+    lod = base / "tex_lo"; lod.mkdir(parents=True, exist_ok=True)
     props_p = ROOT / "world/data/props.json"; props = json.loads(props_p.read_text(encoding="utf-8"))
     rows, bad, tex_seen = [], [], {}
 
-    def put_tex(path: Path):
-        """贴图进公用目录，返回文件名；PNG 无透明 → JPEG。"""
-        im = Image.open(path); name = path.stem + ".jpg"
+    def put_tex(path: Path, alpha=False):
+        """贴图进公用目录（tex/ 原分辨率、tex_lo/ 长宽各半），返回文件名；不透明的转 JPEG（法线也是），透明的存 PNG。"""
+        im = Image.open(path); name = path.stem + (".png" if alpha else ".jpg")
         if name not in tex_seen:
-            im.convert("RGB").save(texd / name, "JPEG", quality=85, optimize=True, progressive=True)   # 网页用 85；法线 PNG 也转 JPEG
-            tex_seen[name] = (texd / name).stat().st_size
+            lo = im.resize((max(8, im.width // 2), max(8, im.height // 2)), Image.LANCZOS)
+            if alpha:
+                im.save(texd / name, "PNG", optimize=True); lo.save(lod / name, "PNG", optimize=True)
+            else:   # 网页用 85；半分辨率的用 80
+                im.convert("RGB").save(texd / name, "JPEG", quality=85, optimize=True, progressive=True)
+                lo.convert("RGB").save(lod / name, "JPEG", quality=80, optimize=True, progressive=True)
+            tex_seen[name] = ((texd / name).stat().st_size, (lod / name).stat().st_size)
         return name
 
     for gl in sorted(src.glob("*.gltf")):
@@ -117,9 +124,8 @@ def import_components(src, pack, tex_dir):
         alpha_imgs = set()
         for i, im in enumerate(g.get("images", [])):
             p = src / im["uri"]; pil = Image.open(p)
-            if pil.mode in ("RGBA", "LA") and pil.getchannel("A").getextrema()[0] < 250:
-                bio = io.BytesIO(); pil.save(bio, "PNG", optimize=True)
-                im["uri"] = "data:image/png;base64," + base64.b64encode(bio.getvalue()).decode(); im["mimeType"] = "image/png"; alpha_imgs.add(i)
+            if pil.mode in ("RGBA", "LA") and pil.getchannel("A").getextrema()[0] < 250:   # 透明的：共用 PNG（三片屋面共用一张散草图，不再各嵌一份）
+                im["uri"] = "../../tex/" + put_tex(p, alpha=True); im["mimeType"] = "image/png"; alpha_imgs.add(i)
             else:
                 im["uri"] = "../../tex/" + put_tex(p); im["mimeType"] = "image/jpeg"
         tex_of = {t_i: t["source"] for t_i, t in enumerate(g.get("textures", []))}
@@ -162,7 +168,8 @@ def import_components(src, pack, tex_dir):
         put_tex(td / n)
     for r in rows:
         print(f"[入库] {r[1]:8s} {r[0]:16s} {r[2]:5d} 面 / {r[3]}  {r[4]} KB")
-    print(f"[贴图] {len(tex_seen)} 张共 {sum(tex_seen.values()) // 1024} KB → {texd.relative_to(ROOT)}")
+    print(f"[贴图] {len(tex_seen)} 张：原分辨率 {sum(v[0] for v in tex_seen.values()) // 1024} KB → {texd.relative_to(ROOT)}；"
+          f"半分辨率 {sum(v[1] for v in tex_seen.values()) // 1024} KB → {lod.relative_to(ROOT)}")
     if bad:
         print("[拒收]", "；".join(bad)); sys.exit(1)
 

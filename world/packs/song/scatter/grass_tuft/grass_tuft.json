@@ -8,7 +8,9 @@
   "Model": {
    "file": "grass_tuft.gltf.json",
    "tris": 6,
-   "textures": [],
+   "textures": [
+    "grass_tuft.png"
+   ],
    "origin": "authored"
   },
   "Footprint": {
