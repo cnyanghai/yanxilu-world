@@ -183,3 +183,56 @@ Claude 的观察：没有屋顶的小屋从 40 度俯角能看见书墙、桌、
 合计 2.64 元。门：每张对照主视觉 B 四分以上 —— Claude 自评全部 4 分以上（风格一致靠的是同一张参考图加写死的构图描述）；用户看完说"过"。
 
 没做的：角色五个动作示意（走、坐、取书、摸猫、张望）。原因：动作示意对图生三维没有用，三维角色的动作来自动作库，不照图做；省下这笔。若用户想先看角色动起来的样子，阶段 3 用三维直接出。
+
+## 10. 宋代营地一周小试的套件表与出图方案（2026-11-04，等用户点头）
+
+小试的交付物见 STATUS「当前阶段与下一步」。按 PIPELINE 1.6：偏屋不整栋生成，拆成组件在预制体里拼。风格对照：主视觉 `concepts/song_camp_keyart_02.jpg`（左上那间茅草偏屋）与套件表 `concepts/song_camp_kit.jpg`。
+
+### 10.1 偏屋的拆法
+
+占地 4 × 2 米（两开间一进深），檐口 2.4 米，屋面 45 度，屋脊高约 3.4 米。正面一门一窗，背面与两山是平墙，两山墙上加三角山花。
+
+| # | 组件 | 尺寸（宽 × 深 × 高，米） | 用几次 | 面数上限 | 禁项（写进提示词） |
+|---|---|---|---|---|---|
+| 1 | 木柱 `post` | 0.16 × 0.16 × 2.4 | 6 | 300 | 不要弯、不要雕花 |
+| 2 | 平墙段 `wall_plain`（竹编抹泥，下段木板） | 2.0 × 0.12 × 2.2 | 4 | 800 | 墙有厚度、无破洞、背面同样完整 |
+| 3 | 门洞墙段 `wall_door` | 2.0 × 0.12 × 2.2，门洞 0.9 × 1.95 居中 | 1 | 900 | 门洞贯通、洞口净高 1.95（角色 1.5 × 1.3） |
+| 4 | 窗洞墙段 `wall_window`（直棂窗） | 2.0 × 0.12 × 2.2，窗 0.8 × 0.6，下沿 1.0 | 1 | 1000 | 窗棂之间透空、不要玻璃 |
+| 5 | 檐梁 `beam` | 2.0 × 0.16 × 0.16 | 6 | 200 | 直、端头平 |
+| 6 | 山花 `gable`（三角，竹编抹泥） | 2.0 × 0.12 × 1.0 | 2 | 400 | 三角形、两面完整 |
+| 7 | 茅草屋面片 `roof_thatch` | 沿脊 2.0 × 坡长 1.7（含 0.3 出檐）× 厚 0.25 | 4 | 1500 | 厚实、无缝、从下方看也完整、边缘收齐不散 |
+| 8 | 屋脊 `ridge`（茅草压脊 + 竹捆） | 2.0 × 0.45 × 0.3 | 2 | 600 | 两端平、可首尾相接 |
+| 9 | 柴门 `door_leaf`（交互物件，三态） | 0.9 × 0.05 × 1.95 | 1 | 400 | 单扇、门轴在左 |
+| 10 | 篝火 `campfire`（石圈 + 柴，不含火焰） | 1.0 × 1.0 × 0.35 | 1 | 1500 | 不要火焰与烟（火是特效） |
+
+地面不生模：三张可平铺贴图，土（底层）、草（第二层，噪声成片）、石板（踏步印章）。
+
+### 10.2 出图（三视图与地面贴图）
+
+- 模型：gpt-image-2 中档，走 fal（`fal_image.py`），带参考图 `song_camp_kit.jpg` 锁风格。单价约 0.38 元一张。
+- 张数：组件三视图 10 张 + 地面贴图 3 张 = 13 张，约 5 元。三视图出图后脚本按三等分裁成三张单视图，送生模。
+- 三视图公共提示词（每张前面接组件描述）：
+
+> Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.
+
+- 组件描述（接在公共提示词前）：
+  1. `A straight square timber post, 16 cm square and 2.4 m tall, aged pine with cracks and soot near the top, plain flat ends, no carving.`
+  2. `A straight wall panel 2.0 m wide, 2.2 m tall, 12 cm thick: woven bamboo wattle plastered with ochre clay on the upper part, horizontal weathered planks on the lower 60 cm, clay partly flaked to show the weave. The panel has real thickness, no holes, and the back face is equally complete.`
+  3. `The same wattle-and-clay wall panel, 2.0 m wide, 2.2 m tall, 12 cm thick, with a rectangular door opening 0.9 m wide and 1.95 m tall centered and cut fully through, framed by a simple timber door frame; no door leaf inside the opening.`
+  4. `The same wattle-and-clay wall panel, 2.0 m wide, 2.2 m tall, 12 cm thick, with a window opening 0.8 m wide and 0.6 m tall whose sill is 1.0 m above the bottom, filled with vertical square timber bars (zhiling window) with open gaps between them, no glass, no paper.`
+  5. `A straight horizontal timber beam, 2.0 m long, 16 cm square section, aged pine, plain flat ends.`
+  6. `A triangular gable infill panel, 2.0 m wide at the base, 1.0 m tall, 12 cm thick, woven bamboo plastered with ochre clay, both faces complete.`
+  7. `A rectangular thatched roof section, 2.0 m along the ridge, 1.7 m along the slope, 25 cm thick: thick dense rice straw thatch with no gaps, complete when seen from below, trimmed straight edges on all four sides, tied with bamboo strips. Show front view, side view as a thick slab profile, and a view from below.`（这一张第三视图改为仰视）
+  8. `A straight thatch ridge cap, 2.0 m long, 45 cm wide, 30 cm tall: a bundled roll of straw pressed with bamboo poles and rope ties, flat cut ends so pieces join end to end.`
+  9. `A single rustic door leaf, 0.9 m wide, 1.95 m tall, 5 cm thick: vertical weathered planks with two horizontal battens and a simple wooden latch, hinge side on the left.`
+  10. `A campfire ring 1.0 m across and 35 cm tall: a circle of fist-sized river stones blackened by soot around a teepee of split firewood with charred ends, ash on the ground inside. No flames, no smoke, no glow.`
+- 地面贴图提示词（gpt-image-2，1:1，不带参考图）：
+  - 土：`Seamless tileable top-down texture of compacted farmyard dirt, 2 m by 2 m area, small pebbles, faint footprints and straw bits, warm brown-ochre, even flat lighting, no shadows, no objects, photoreal PBR albedo.`
+  - 草：`Seamless tileable top-down texture of short trampled meadow grass with patches of dry yellow blades and clover, 2 m by 2 m area, slightly desaturated green, even flat lighting, no shadows, no flowers, photoreal PBR albedo.`
+  - 石板：`Seamless tileable top-down texture of irregular flat grey-blue stepping stones set in dirt with moss in the joints, 2 m by 2 m area, even flat lighting, no shadows, photoreal PBR albedo.`
+
+### 10.3 生模
+
+- 先 A/B 一件 `wall_door`（最难：要贯通的门洞和厚度）：Rodin（fal，PBR，多图输入，约 0.4 美元）与 Tripo 多视图（fal 上的 v2.5 multiview，带贴图约 0.3 美元；官方 P2.0 要另开账号，多视图每次约 1.1 美元，先不开）。比厚度、门洞是否贯通、四边面、贴图清晰度，定一家。
+- 其余 9 件用胜出的那家，约 3 到 4 美元。
+- 生模合计约 30 元；本节合计约 35 元。
