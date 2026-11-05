@@ -6,6 +6,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { loadTables } from "./data/tables.js";
 import { detectTier } from "./render/tiers.js";
 import { Composite } from "./render/post.js";
+import { Fire, flicker } from "./render/fire.js";
 
 const Q = new URLSearchParams(location.search);
 const canvas = document.getElementById("gl");
@@ -32,10 +33,11 @@ const sun = new THREE.DirectionalLight(0xffffff, 1); scene.add(sun, sun.target);
 sun.castShadow = true; sun.shadow.mapSize.setScalar(TIER >= 2 ? 4096 : 2048);
 Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 60 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1); scene.add(hemi);
-const locals = [], glowMats = [];
+const locals = [], glowMats = [], fires = [];
 function addLight(parent, L) {
   const pl = new THREE.PointLight(new THREE.Color().setRGB(L.color[0], L.color[1], L.color[2], THREE.SRGBColorSpace), 0, 0, 2);
-  pl.userData = { power: L.power, periods: L.periods || ["dawn", "day", "dusk", "night"] }; parent.add(pl); locals.push(pl); return pl;
+  pl.userData = { power: L.power, periods: L.periods || ["dawn", "day", "dusk", "night"], flicker: L.flicker || 0, seed: Math.random() * 10, base: 0 };
+  parent.add(pl); locals.push(pl); return pl;
 }
 
 /* ---------- 实体：Transform（厘米、四元数 / 欧拉 / 绕 y） ---------- */
@@ -115,8 +117,9 @@ function setPeriod(pd) {
   sun.color.set(v.key.color); sun.intensity = v.key.power; sun.position.copy(d).multiplyScalar(-25); sun.target.position.set(0, 0, 0);
   hemi.color.set(v.ambient.sky); hemi.groundColor.set(v.ambient.ground); hemi.intensity = v.ambient.power * Math.PI;
   const mul = v.localLightMul ?? 1;
-  for (const l of locals) l.intensity = l.userData.periods.includes(pd) ? l.userData.power / (4 * Math.PI) * mul : 0;
-  for (const m of glowMats) m.emissiveIntensity = pd === "night" || pd === "dusk" ? m.userData.glow * mul : 0;
+  for (const l of locals) l.intensity = l.userData.base = l.userData.periods.includes(pd) ? l.userData.power / (4 * Math.PI) * mul : 0;
+  for (const m of glowMats) m.emissiveIntensity = m.userData.base = pd === "night" || pd === "dusk" ? m.userData.glow * mul : 0;
+  for (const f of fires) f.setMode(f.def.modes?.[pd] || "off");
   scene.background = new THREE.Color(v.fog.color);
   if (composite) composite.setVis({ fogColor: v.fog.color, fogDensity: v.fog.density, fogStart: 30, vignette: v.vignette ?? 0.25, grade: [1, 1, 1], ao: v.ao, contrast: v.contrast ?? 1 });
   document.body.dataset.period = pd;
@@ -135,6 +138,7 @@ const t0 = performance.now(); let ready = false;
 await Promise.all(PRESET.entities.map((e) => {
   const c = e.components;
   if (c.Prefab) return placePrefab(e);
+  if (c.Vfx) return getJSON("./" + c.Vfx.file).then((def) => { const f = new Fire(def); applyT(f.group, c.Transform); scene.add(f.group); fires.push(f); });
   if (c.Model) return model(c.Model.file).then((m) => { const o = m.clone(); applyT(o, c.Transform); o.name = e.id; scene.add(o); if (c.Light) addLight(o, c.Light); });
   if (c.Ground) return ground(e);
   if (c.Scatter) return scatter(e);
@@ -144,9 +148,13 @@ await Promise.all(PRESET.entities.map((e) => {
 setPeriod(period); setShot(shot);
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();
-let frames = 0;
+let frames = 0; const clock = new THREE.Clock();
 function frame() {
   renderer.info.reset();
+  const t = clock.getElapsedTime();
+  for (const f of fires) f.update(t, camera, renderer.domElement.height);
+  for (const l of locals) if (l.userData.flicker && l.userData.base) l.intensity = l.userData.base * (1 + l.userData.flicker * flicker(t, l.userData.seed));
+  for (const m of glowMats) if (m.userData.base) m.emissiveIntensity = m.userData.base * (1 + 0.06 * flicker(t, 3.3));
   if (composite) composite.render(scene, camera); else renderer.render(scene, camera);
   if (++frames === 3) { ready = true; document.getElementById("st").textContent = stats(); }
   requestAnimationFrame(frame);

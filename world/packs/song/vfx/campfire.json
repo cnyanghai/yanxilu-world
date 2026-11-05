@@ -1,0 +1,40 @@
+{
+ "format": 1,
+ "id": "campfire_fire",
+ "kind": "fire",
+ "pack": "song",
+ "note": "篝火的火（render/fire.js）：火焰几片交叉竖面 + 火星 + 烟；modes 按时段给：smolder 余烬冒烟、burn 烧旺、off 灭。尺寸米。；2026-11-05 调过：亮度 5 时 AgX 把橙红压成粉白，降到 1.8、色往橙黄收；火舌顶端在面片内收住（面片 1 米、火约 0.6 米）；火星缩小压橙；白天烟加浓",
+ "flame": {
+  "height": 1.0,
+  "radius": 0.26,
+  "planes": 4,
+  "base": 0.04,
+  "intensity": 1.8,
+  "colors": [
+   "#e8380a",
+   "#ff8a1c",
+   "#ffd27a"
+  ]
+ },
+ "sparks": {
+  "count": 30,
+  "rise": 1.6,
+  "radius": 0.15,
+  "size": 0.018,
+  "intensity": 3
+ },
+ "smoke": {
+  "width": 1.0,
+  "height": 2.6,
+  "base": 0.3,
+  "color": "#8a8780",
+  "opacity": 0.75,
+  "burnOpacity": 0.22
+ },
+ "modes": {
+  "dawn": "smolder",
+  "day": "smolder",
+  "dusk": "burn",
+  "night": "burn"
+ }
+}

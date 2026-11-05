@@ -193,6 +193,15 @@
          "emissive": {
           "type": "boolean",
           "description": "同一实体的模型跟着亮（灯笼纸）"
+         },
+         "flicker": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "闪烁幅度（火光 0.18、灯笼 0.06）；强度乘 1 + 幅度 × 三个正弦之和"
+         },
+         "note": {
+          "type": "string"
          }
         }
        },
@@ -206,7 +215,7 @@
           "type": "string"
          }
         },
-        "description": "雾、薄霭、飞虫、篝火火焰这类粒子实体，单独摆（暗黑 2 一座城摆了 105 个）"
+        "description": "雾、薄霭、飞虫、篝火火焰这类粒子实体，单独摆（暗黑 2 一座城摆了 105 个）；file 指向 packs/<包>/vfx/<名>.json（kind: fire 由 render/fire.js 画，modes 按时段给 off / smolder / burn）"
        },
        "Audio": {
         "type": "object",

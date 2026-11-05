@@ -101,7 +101,7 @@
    "components": {
     "Transform": {
      "x": 290,
-     "y": 55,
+     "y": 80,
      "z": -340
     },
     "Light": {
@@ -118,7 +118,22 @@
       "dusk",
       "night"
      ],
-     "note": "光源放在柴堆尖顶上方（35 厘米时紧挨柴头，照成一片白）"
+     "note": "光源在火焰上部（80 厘米）：60 厘米时柴堆尖顶仍被照白。闪烁幅度 0.18",
+     "flicker": 0.18
+    }
+   }
+  },
+  {
+   "id": "campfire_vfx",
+   "name": "篝火的火焰、火星与烟",
+   "components": {
+    "Transform": {
+     "x": 290,
+     "y": 0,
+     "z": -340
+    },
+    "Vfx": {
+     "file": "packs/song/vfx/campfire.json"
     }
    }
   }

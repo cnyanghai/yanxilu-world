@@ -691,7 +691,8 @@
       "dusk",
       "night"
      ],
-     "emissive": true
+     "emissive": true,
+     "flicker": 0.06
     }
    }
   },

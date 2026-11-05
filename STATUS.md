@@ -2,8 +2,8 @@
 type: status
 status: active
 cluster: product
-stage: M1 进行中，画质门 2026-11-05 已过（营地引擎截图，用户判对照墙分过 3.5）；当前交付物是宋代营地一周小试剩余：火焰特效、人形巡检、1 档优化、PIPELINE 去草案（篝火 2026-11-05 已 Blender 程序建进引擎；Rodin 正规接光挪到营地切片的有机件）
-next: 火焰特效（篝火、灯笼的火苗，光源位置跟着改）→ 人形巡检 walk_check → 1 档：半分辨率 + 图集 + 预制体合批（13 MB → 8 MB、190 → 120 draw call）→ PIPELINE 去草案 → M1 收尾，进营地切片
+stage: M1 进行中，画质门 2026-11-05 已过（营地引擎截图，用户判对照墙分过 3.5）；当前交付物是宋代营地一周小试剩余：人形巡检、1 档优化、PIPELINE 去草案（火焰 2026-11-05 已做）（篝火 2026-11-05 已 Blender 程序建进引擎；Rodin 正规接光挪到营地切片的有机件）
+next: 人形巡检 walk_check → 1 档：半分辨率 + 图集 + 预制体合批（13 MB → 8 MB、190 → 120 draw call）→ PIPELINE 去草案 → M1 收尾，进营地切片
 blocked_by: 无（服务器新克隆的每 5 分钟 git pull 由用户照书架那条加）
 updated: 2026-11-05
 ---
@@ -72,6 +72,7 @@ updated: 2026-11-05
 
 ## 日志
 
+- 2026-11-05 火焰（用户「做火焰」）：world/render/fire.js 程序化火（交叉竖面 + 噪声火舌、火星点精灵、正对镜头的烟柱），定义 packs/song/vfx/campfire.json，预设 Vfx 实体；按时段 smolder / burn（白天只冒烟）；灯加 flicker（篝火 0.18、灯笼 0.06），灯笼纸自发光跟着晃；光源抬到 80 厘米。调了四轮：亮度 5 时 AgX 压成粉白 → 1.8、火舌顶端被面片切平 → 顶端留余量、光源 35 / 45 / 60 厘米都把柴头照白 → 80。夜晚篝火机位过曝 0、远景死黑 12.8%，多 5 个 draw call。动图 tools/out/camp/campfire_night.gif。ASSET-SPEC 10.9、技术卡十七
 - 2026-11-05 篝火（用户「篝火，我们的 Blender 做不出来吗？」）：kitlib.m_campfire 程序建（12 块熏黑河卵石、7 根劈柴带木茬与烧焦、灰烬、6 块炭夜里自发光），1272 面，0 元；prep 加浅色木茬贴图 firewood；导出入库进 packs/song/prop/campfire，预设加模型实体，camp.js 支持预设模型与炭火自发光，房间表加篝火机位。查出并修了顶点色丢失（导出器无活动颜色属性时写全白 COLOR_0，入库又删了 COLOR_1；屋面旧化之前在引擎里一直没生效），kitlib._active_col + 入库兜底；截图脚本改一次加载（每张重载累积显存，第 7 张起上下文丢失）；篝火光源抬到 55 厘米。数字：白天远景中位 54、最暗 5% 7、夜晚死黑 13.7%。还差火焰特效。ASSET-SPEC 10.8
 - 2026-11-05 用户判营地引擎截图对照墙分过 3.5，M1 画质门过（墙地毯地板明度差一条是书房指标，营地不适用；重烘一条营地无烘焙，整条资产链重跑约 3 分钟）。M1 剩：篝火 Rodin 正规接光、人形巡检、1 档优化、PIPELINE 去草案；篝火报价 Rodin 约 0.4 美元一次，等用户点头
 - 2026-11-05 偏屋进引擎（用户「导进引擎」）：Blender 端 export_kit.py 每件导分离式 glTF（顶点色、法线、透明散草）+ 偏屋预制体 JSON（坐标换 three 轴向、四元数、厘米）；asset_import.py 加组件模式（保留原点、面数按 ASSET-SPEC 拒收、贴图去重进 packs/song/tex、透明小图内嵌改裁切），窗洞墙 1620 面被拒 → 导出改一段倒角后 660；24 件入库、贴图 50 张 12 MB。数据：rooms 加 camp、vis 加 camp:day / camp:night（物理单位）、presets 加 camp、Schema 加 Ground / Scatter / 灯的 periods / 四元数、tiles 加露天墙段。world/camp.html + camp.js（读表搭场景：预制体、地面分层着色、散布实例、按时段的灯与灯笼自发光）；post.js 加屏幕空间环境遮蔽与显示空间对比（默认关，书房不受影响）。真显卡截图 tools/tests/camp_shot.py：Windows Chrome 无头 + 远程调试，RTX 3060 / ANGLE D3D11 / 档位 2。调了三轮：曝光 0.45 → 0.33、对比 1.12 → 1.05（1.12 时近景死黑 18%）、地面铺到 40 米、散草压暗。数字：白天远景中位 55、最暗 5% 7、光比 2.8、190 draw call、4.6 万三角面；夜晚死黑 14%。坑：灯笼材质被组件重建清掉、网格名变 .001；我一条命令里误带 git checkout 把道具表的新条目还原了，重跑入库补回。没到：13 MB（首包目标 8 MB）、1 档 draw call 超、篝火无模型、人形巡检。截图 tools/out/camp/（compare_engine_blender.jpg、camp_six.jpg）；技术卡十六。post.js 改动后书房回归测试（world_test，桌面 + 手机）通过，截图在 tools/out/world/

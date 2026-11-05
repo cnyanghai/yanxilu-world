@@ -93,7 +93,7 @@ lan = bpy.data.objects.get("lantern")
 if lan:
     p = to3(lan.location)
     ents.append({"id": "lantern", "components": {"Transform": {"x": p[0], "y": p[1], "z": p[2]}, "Model": {"file": "lantern", "castShadow": False},
-                                                 "Light": {"kind": "point", "color": [1.0, 0.784, 0.565], "power": 80, "radius": 6, "periods": ["dusk", "night"], "emissive": True}}})
+                                                 "Light": {"kind": "point", "color": [1.0, 0.784, 0.565], "power": 80, "radius": 6, "periods": ["dusk", "night"], "emissive": True, "flicker": 0.06}}})
 ents.append({"id": "window_glow", "components": {"Transform": {"x": 100, "y": 130, "z": -70},
                                                  "Light": {"kind": "point", "color": [1.0, 0.75, 0.5], "power": 70, "radius": 30, "periods": ["dusk", "night"],
                                                            "note": "屋里的灯，从窗棂透出来（Blender 看光里是 0.9 × 0.7 的面光）"}}})
