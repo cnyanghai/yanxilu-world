@@ -3,7 +3,7 @@ type: status
 status: active
 cluster: product
 stage: M1 进行中；排练完成，PIPELINE 1.0 草案已并入抖音水上村落的四条规矩；当前交付物是宋代营地一周小试（偏屋组件 + 篝火 + 地面）
-next: 用户点头重出门洞墙与窗洞墙两张（ASSET-SPEC 10.4）→ Rodin / Tripo A/B 一件 → 导入拼偏屋 → 夜晚光与截图打分（量 M1 画质门）
+next: 用户点头做生模 A/B（wall_door：Rodin 与 Tripo 各一次，约 0.7 美元）→ Rodin / Tripo A/B 一件 → 导入拼偏屋 → 夜晚光与截图打分（量 M1 画质门）
 blocked_by: 无（服务器新克隆的每 5 分钟 git pull 由用户照书架那条加）
 updated: 2026-11-04
 ---
@@ -70,6 +70,7 @@ updated: 2026-11-04
 
 ## 日志
 
+- 2026-11-04 门洞墙与窗洞墙用 wall_plain 作参考重出（0.75 元）：材质统一；门洞仍约 0.64 × 1.79 米，定为生模后 Blender 洞口校正；查到 fal 上 Tripo v2.5 多视图接口（front / left / right / back 四张图、texture 档、quad、pbr）
 - 2026-11-04 营地小试出图：gpt-image-2 中档 13 张（4.9 元）存 concepts/song_kit/；组件 8 件可用，门洞墙与窗洞墙被参考图带偏成夯土瓦顶院墙、门洞偏小，要换 wall_plain 作参考重出 2 张（约 0.75 元，等用户点头）；地面三张做成无缝平铺；记 ASSET-SPEC 10.4
 - 2026-11-04 用户给两条抖音（Astra 一夜做游戏、Tripo P2.0 + Opus 5.5 在 Godot 拼水上村落）：取视频抽帧看完，落 REFERENCES；结论是画质先靠光与地面层，资产走模块化套件 + 尺寸脚本 + 禁项提示词 + 人形实测，图集与"每件独立贴图"相冲待定
 - 2026-11-03 Baba：/opt/yanxilu-world 克隆 + /opt/yanxilu/world 链接完成，线上 /world 恢复（页面 / three.module.js / world.js / vis.json 均 200）；拆分全部收口

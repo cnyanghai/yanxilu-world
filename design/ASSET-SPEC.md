@@ -252,3 +252,5 @@ Claude 的观察：没有屋顶的小屋从 40 度俯角能看见书墙、桌、
 教训：参考图会把同族组件拉向参考图里最像的那件（墙 → 院墙）。同族的第二件起，参考图换成本族已定的样板（wall_door / wall_window 用 wall_plain 做参考），并在提示词里写"no roof tiles, no stone base"。
 
 重出提示词（等用户点头，2 张约 0.75 元，参考图 `song_kit/wall_plain.jpg`）：前缀改为 `Exactly the same wall construction as the reference image: woven bamboo wattle plastered with ochre clay, horizontal weathered planks on the lower 60 cm, no roof tiles on top, no stone base.`，后接原第 3、4 条描述与公共提示词；门洞一条加 `The door opening is tall: 1.95 m of the 2.2 m wall height, and 0.9 m of the 2.0 m width.`
+
+重出结果（2026-11-04，2 张 0.75 元，本节合计 5.64 元）：两张都改对了材质，和 wall_plain 同一种墙（竹编抹泥 + 下段木板 + 两侧立框），无瓦顶无石基。量得：墙宽高比 1.03（要 0.91，导入按尺寸表非等比缩）；窗高 0.65、下沿 0.93 米，合格；**门洞仍偏小，约 0.64 × 1.79 米**（要 0.9 × 1.95）。图像模型给不准洞口尺寸，再抽一次也没把握 —— 技术决定：生模后在 Blender 里移门框内圈顶点把洞口拉到 0.9 × 1.95（导入流程加一步"洞口校正"），不再重出图。第一轮的两张院墙样式移到 `song_kit/_archive/`，以后做院墙时可作参考。

@@ -13,15 +13,17 @@
  },
  {
   "id": "wall_door",
-  "prompt": "The same wattle-and-clay wall panel, 2.0 m wide, 2.2 m tall, 12 cm thick, with a rectangular door opening 0.9 m wide and 1.95 m tall centered and cut fully through, framed by a simple timber door frame; no door leaf inside the opening. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "prompt": "Exactly the same wall construction as the reference image: woven bamboo wattle plastered with ochre clay, horizontal weathered planks on the lower 60 cm, no roof tiles on top, no stone base. The same wattle-and-clay wall panel, 2.0 m wide, 2.2 m tall, 12 cm thick, with a rectangular door opening 0.9 m wide and 1.95 m tall centered and cut fully through, framed by a simple timber door frame; no door leaf inside the opening. The door opening is tall: 1.95 m of the 2.2 m wall height, and 0.9 m of the 2.0 m width. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
   "ratio": "3:2",
-  "ref": true
+  "ref": true,
+  "ref_image": "song_kit/wall_plain.jpg"
  },
  {
   "id": "wall_window",
-  "prompt": "The same wattle-and-clay wall panel, 2.0 m wide, 2.2 m tall, 12 cm thick, with a window opening 0.8 m wide and 0.6 m tall whose sill is 1.0 m above the bottom, filled with vertical square timber bars (zhiling window) with open gaps between them, no glass, no paper. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "prompt": "Exactly the same wall construction as the reference image: woven bamboo wattle plastered with ochre clay, horizontal weathered planks on the lower 60 cm, no roof tiles on top, no stone base. The same wattle-and-clay wall panel, 2.0 m wide, 2.2 m tall, 12 cm thick, with a window opening 0.8 m wide and 0.6 m tall whose sill is 1.0 m above the bottom, filled with vertical square timber bars (zhiling window) with open gaps between them, no glass, no paper. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
   "ratio": "3:2",
-  "ref": true
+  "ref": true,
+  "ref_image": "song_kit/wall_plain.jpg"
  },
  {
   "id": "beam",
