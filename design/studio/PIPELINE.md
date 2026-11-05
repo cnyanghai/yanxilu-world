@@ -30,6 +30,8 @@
 ### 1.7 贴图：独立还是图集（技术决定，2026-11-04，可逆）
 
 - 先定**贴图密度**再定分辨率：同一包内按每米像素统一（目标 ≥ 500 像素 / 米，M1 画质门那条），30 厘米的木桩和 4 米的屋顶不分一样大的图。
+- 量密度按**原图像素**，不按放大后的：三视图一张图里放三个视图，单视图常只有 600 到 800 像素宽（营地小试实测 320 到 400 像素 / 米）；要贴图的件，正面单独出一张图。
+- 法线可由明度推（`prep_textures.py` 的 `normal`），强度近景看过再定，开猛了有浮雕味。
 - 1 档（手机）：同一预制体的组件合成一张图集（alb / nrm / orm 各一张），一个预制体一到两个材质；2 档以上：主角件（主屋、角色、商店物件）保留独立三件套，其余组件仍走图集。
 - 图集由 asset_import 在登记预制体时打，不手拼。
 
@@ -61,7 +63,8 @@
 ## 6. 工具清单
 
 已有：asset_import、asset_shrink、fal_image3d、tables_check、world_test、paint_verify、bake.sh、d2_decode（研究用）。
-排练里写的、要转正的：prefab 组装（prepare / finish 的我们版）、场景看图页（scene.html → tools/tests/asset_view.py）、明度量尺（measure.py → tools/tests/measure.py）。
+已转正：明度量尺 tools/tests/measure.py（2026-11-04）；Blender 看光 tools/blender/song_kit/light.py（资产在 Eevee 下按 vis 打白天 / 夜晚出图）。
+排练里写的、要转正的：prefab 组装（prepare / finish 的我们版）、场景看图页（scene.html → tools/tests/asset_view.py）。
 没有的：摆放编辑器、散布工具、环境图烘焙、状态机与时间线的播放器、人形巡检脚本（walk_check）、图集打包、镂空率量尺。
 
 ## 7. 排练留下的坑
