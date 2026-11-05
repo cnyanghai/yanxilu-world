@@ -109,7 +109,39 @@
    "ibl": 0.2,
    "characterShadow": 0.9,
    "characterBrightness": 0.4,
-   "itemBrightness": 2.0
+   "itemBrightness": 2.0,
+   "physical": {
+    "key": {
+     "color": "#f5e6c0",
+     "power": 3.2,
+     "dir": [
+      0.75,
+      -0.62,
+      0.22
+     ]
+    },
+    "ambient": {
+     "sky": "#d8dce6",
+     "ground": "#6b5640",
+     "power": 1.1
+    },
+    "fog": {
+     "color": "#3b3129",
+     "density": 0.0
+    },
+    "vignette": 0.22,
+    "ao": {
+     "strength": 0.6,
+     "radius": 0.4
+    },
+    "contrast": 1.05,
+    "localLightMul": 1,
+    "lights": {
+     "desk_lamp": 40,
+     "wall_lamp": 25
+    },
+    "note": "实时光（world/play.js，M2 书房灰盒）用的物理单位：光从左边窗外斜进来；旧的 key / ambient 留给烘焙书房（world.js）"
+   }
   },
   {
    "id": "study:dusk",
@@ -218,7 +250,39 @@
    "ibl": 0.05,
    "characterShadow": 0.7,
    "characterBrightness": 0.4,
-   "itemBrightness": 2.0
+   "itemBrightness": 2.0,
+   "physical": {
+    "key": {
+     "color": "#9fb4dc",
+     "power": 0.35,
+     "dir": [
+      0.6,
+      -0.7,
+      0.3
+     ]
+    },
+    "ambient": {
+     "sky": "#2c3a58",
+     "ground": "#120f0c",
+     "power": 2.4
+    },
+    "fog": {
+     "color": "#15110e",
+     "density": 0.0
+    },
+    "vignette": 0.3,
+    "ao": {
+     "strength": 0.5,
+     "radius": 0.4
+    },
+    "contrast": 1.05,
+    "localLightMul": 3.0,
+    "lights": {
+     "desk_lamp": 40,
+     "wall_lamp": 25
+    },
+    "note": "夜读：台灯、壁灯亮（localLights），月光很弱"
+   }
   },
   {
    "id": "yard:day",

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="研习录小世界 · 营地小试：宋代茅草偏屋第一次进引擎（实时光、地面分层、散布）。">
 <title>研习录 · 营地小试</title>
-<!-- 营地小试（2026-11-05）：world/camp.js。和 index.html 同一套自带 three.js，不走 CDN。网址参数 ?shot=wide|close|detail&period=day|night -->
-<script>(function(){var p=location.pathname;if(/camp(\.html)?$/.test(p)){}else if(!/\/$/.test(p))document.write('<base href="'+p.replace(/[^\w\-\/.~%]/g,'')+'/">');})();</script>
+<!-- 营地小试（2026-11-05）：world/play.js（房间运行时，这页固定 room=camp）。和 index.html 同一套自带 three.js，不走 CDN。网址参数 ?shot=wide|close|detail&period=day|night -->
+<script>(function(){var p=location.pathname;if(/(camp|play)(\.html)?$/.test(p)){}else if(!/\/$/.test(p))document.write('<base href="'+p.replace(/[^\w\-\/.~%]/g,'')+'/">');})();</script>
 <link rel="icon" href="data:,">
 <!-- 营地页不加载 fonts.css（内嵌字体 1.3 MB，这页只有几个按钮），用系统衬线字体 -->
 <script type="importmap">
@@ -22,7 +22,7 @@ html,body{margin:0;height:100%;background:#17110C;color:#EDE0C4;font:14px/1.5 "N
 body.shot #hud,body.shot #st{display:none}
 </style>
 </head>
-<body>
+<body data-room="camp">
 <canvas id="gl"></canvas>
 <div id="hud"><b>营地小试</b>
   <button data-period="day">白天</button><button data-period="night">夜晚</button>
@@ -30,6 +30,6 @@ body.shot #hud,body.shot #st{display:none}
 </div>
 <div id="st">加载中…</div>
 <script>if(/[?&]shot=/.test(location.search)&&/[?&]clean=1/.test(location.search))document.body.classList.add("shot");</script>
-<script type="module" src="./camp.js"></script>
+<script type="module" src="./play.js"></script>
 </body>
 </html>
