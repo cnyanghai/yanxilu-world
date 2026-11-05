@@ -1,6 +1,8 @@
 /* 渲染层：在场（M2，2026-11-05）—— 角色、点地走路、跟随镜头、墙透。逻辑在 world/sim/walker.js（纯函数），这里只管画与输入。
    设计依据：proposals/02 第六条（点地寻路、途中改道）、05 主张四（跟随镜头 = 角色位置的低通、俯角 40、两档距离；墙透 = 射线从镜头到角色，
-   挡住的墙段淡到 0.15）。角色先用 1.5 米素模人形占位（M2 不验收画质）。单位：sim 层厘米，这里米。 */
+   挡住的墙段淡到 0.15）。角色先用 1.5 米素模人形占位（M2 不验收画质）。单位：sim 层厘米，这里米。
+   镜头分区（2026-11-05 院子与书房合成一块场地后）：zones 里每个区（书房）有自己的方位角、俯角、画面高，区外用 base（院子）；
+   角色跨过区的边界时三样一起缓动过去（约 1 秒），不切镜头。 */
 import * as THREE from "three";
 import { Walker, plan } from "../sim/walker.js";
 
@@ -17,12 +19,14 @@ export function makeFigure(color = 0x8f8f8c) {
 }
 
 export class Presence {
-  /* opts：scene、camera、dom（画布）、grid（world/sim/grid.js 的 Grid，已写好阻挡）、room（rooms 表的一行）、walls（可淡出的墙网格）、spawn（厘米） */
+  /* opts：scene、camera、dom（画布）、grid（world/sim/grid.js 的 Grid，已写好阻挡）、room（rooms 表的一行）、walls（可淡出的墙网格）、spawn（厘米）、
+     base / zones：镜头分区 { id, az, pitch, frameH（米）, rect（厘米，zones 才有） } */
   constructor(o) {
     Object.assign(this, { scene: o.scene, camera: o.camera, dom: o.dom, grid: o.grid, room: o.room, walls: o.walls || [] });
     const F = o.room.follow || {};
-    this.pitch = F.pitch ?? 40; this.fov = F.fov ?? 20; this.zooms = F.zoom || [1, 0.65]; this.zi = 0; this.az = o.az ?? 20;
-    this.frameH = o.frameH ?? 4.2;                                 /* 跟随镜头第一档画面高（米），第二档乘 zoom */
+    this.fov = F.fov ?? 20; this.zooms = F.zoom || [1, 0.65]; this.zi = 0;
+    this.base = o.base || { id: o.room.id, az: F.az ?? 20, pitch: F.pitch ?? 40, frameH: (F.frameH ?? 420) / 100 }; this.zones = o.zones || [];
+    const z0 = this.zoneAt(o.spawn || [0, 0]); this.az = z0.az; this.pitch = z0.pitch; this.frameH = z0.frameH; this.zone = z0.id;   /* frameH：第一档画面高（米），第二档乘 zoom */
     this.clear = o.clear ?? 10;                                    /* 拉直路线时离家具留多少厘米 */
     this.walker = new Walker(o.spawn || [0, 0], { speed: o.speed ?? 140, heading: Math.PI });
     this.fig = makeFigure(); this.scene.add(this.fig);
@@ -34,6 +38,7 @@ export class Presence {
     this.syncFigure(0);
   }
   distFor(i) { return (this.frameH * this.zooms[i] / 2) / Math.tan(deg(this.fov) / 2); }
+  zoneAt(p) { for (const z of this.zones) if (p[0] > z.rect.x0 && p[0] < z.rect.x1 && p[1] > z.rect.z0 && p[1] < z.rect.z1) return z; return this.base; }
   makeMarker() {
     const m = new THREE.Mesh(new THREE.RingGeometry(0.11, 0.15, 32), new THREE.MeshBasicMaterial({ color: 0xf3d98a, transparent: true, opacity: 0, depthWrite: false }));
     m.rotation.x = -Math.PI / 2; m.position.y = 0.015; m.renderOrder = 5; return m;
@@ -86,6 +91,9 @@ export class Presence {
   }
   /* 跟随镜头：目标点是角色位置（胸口高）的低通，距离两档缓动；俯角与方位固定 */
   follow(dt) {
+    const zg = this.zoneAt(this.walker.pos), kz = this.snap ? 1 : 1 - Math.exp(-dt * 2.4); this.zone = zg.id;   /* 镜头分区缓动 */
+    let da = zg.az - this.az; da = Math.atan2(Math.sin(deg(da)), Math.cos(deg(da))) * 180 / Math.PI;
+    this.az += da * kz; this.pitch += (zg.pitch - this.pitch) * kz; this.frameH += (zg.frameH - this.frameH) * kz; this.dist = this.distFor(this.zi);
     const want = new THREE.Vector3(this.walker.pos[0] / 100, 0.9, this.walker.pos[1] / 100), k = this.snap ? 1 : 1 - Math.exp(-dt * 3.2);
     this.target.lerp(want, k); this.distNow += (this.dist - this.distNow) * (this.snap ? 1 : 1 - Math.exp(-dt * 4)); this.snap = false;
     const a = deg(this.az), e = deg(this.pitch), back = this.camera.aspect >= 1.6 ? 1 : Math.min(1.6, Math.sqrt(1.6 / this.camera.aspect));   /* 竖屏退一些（跟着人走，不必看全房；退满 1.6 / 宽高比 时房子太小） */
@@ -110,5 +118,5 @@ export class Presence {
       this.fade.set(w, next); w.material.opacity = next; w.material.depthWrite = next > 0.98; w.castShadow = true;
     }
   }
-  info() { return { pos: this.walker.pos.map((v) => Math.round(v)), heading: +this.walker.heading.toFixed(3), moving: this.walker.moving, zoom: this.zi, faded: this.walls.filter((w) => this.fade.get(w) < 0.5).map((w) => w.userData.side) }; }
+  info() { return { pos: this.walker.pos.map((v) => Math.round(v)), heading: +this.walker.heading.toFixed(3), moving: this.walker.moving, zoom: this.zi, zone: this.zone, az: +this.az.toFixed(1), faded: [...new Set(this.walls.filter((w) => this.fade.get(w) < 0.5).map((w) => w.userData.side))] }; }
 }

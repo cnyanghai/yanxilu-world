@@ -1,0 +1,206 @@
+{
+ "format": 1,
+ "room": "yard",
+ "pack": "song",
+ "units": "cm",
+ "note": "宋代院落（2026-11-05）：书房是北边的主屋（rooms.yard.rooms），偏屋、篝火、地面、散布用营地小试的宋代包；树、长椅、信箱还是灰盒占位",
+ "entities": [
+  {
+   "id": "shed",
+   "name": "茅草偏屋（东侧，门朝西对院心）",
+   "components": {
+    "Transform": {
+     "x": 440,
+     "y": 0,
+     "z": -60,
+     "rotY": 90
+    },
+    "Prefab": {
+     "file": "packs/song/prefabs/shed.json"
+    }
+   }
+  },
+  {
+   "id": "ground",
+   "name": "地面（院子分层图，tools/song_yard.py 生成）",
+   "components": {
+    "Transform": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "Ground": {
+     "size": 1200,
+     "mask": "packs/song/ground/yard_mask.jpg",
+     "layers": [
+      {
+       "name": "土",
+       "alb": "packs/song/tex/ground_dirt.jpg",
+       "nrm": "packs/song/tex/ground_dirt_n.jpg",
+       "tiling": 200
+      },
+      {
+       "name": "草",
+       "alb": "packs/song/tex/ground_grass.jpg",
+       "nrm": "packs/song/tex/ground_grass_n.jpg",
+       "tiling": 200
+      }
+     ],
+     "damp": 0.42,
+     "extent": 8000
+    }
+   }
+  },
+  {
+   "id": "scatter",
+   "name": "草丛、石块、踏步石（tools/song_yard.py 生成）",
+   "components": {
+    "Transform": {
+     "x": 0,
+     "y": 0,
+     "z": 0
+    },
+    "Scatter": {
+     "file": "packs/song/ground/yard_scatter.json",
+     "axes": "three",
+     "models": {
+      "tufts": [
+       "grass_tuft"
+      ],
+      "stones": [
+       "rock_0",
+       "rock_1",
+       "rock_2",
+       "rock_3"
+      ],
+      "steps": [
+       "step_0",
+       "step_1",
+       "step_2"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "id": "campfire",
+   "name": "篝火（石圈 + 劈柴 + 灰 + 炭，Blender 程序建）",
+   "components": {
+    "Transform": {
+     "x": 170,
+     "y": 0,
+     "z": 230
+    },
+    "Model": {
+     "file": "campfire",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "campfire_light",
+   "name": "篝火的光",
+   "components": {
+    "Transform": {
+     "x": 170,
+     "y": 80,
+     "z": 230
+    },
+    "Light": {
+     "kind": "point",
+     "color": [
+      1.0,
+      0.706,
+      0.478
+     ],
+     "power": 330,
+     "radius": 30,
+     "shadow": false,
+     "periods": [
+      "dusk",
+      "night"
+     ],
+     "note": "光源在火焰上部（80 厘米）：60 厘米时柴堆尖顶仍被照白。闪烁幅度 0.18",
+     "flicker": 0.18
+    }
+   }
+  },
+  {
+   "id": "campfire_vfx",
+   "name": "篝火的火焰、火星与烟",
+   "components": {
+    "Transform": {
+     "x": 170,
+     "y": 0,
+     "z": 230
+    },
+    "Vfx": {
+     "file": "packs/song/vfx/campfire.json"
+    }
+   }
+  },
+  {
+   "id": "tree",
+   "name": "院里的树（地标）",
+   "components": {
+    "Transform": {
+     "x": -440,
+     "y": 0,
+     "z": -360,
+     "rotY": 0
+    },
+    "Slot": {
+     "slot": "tree"
+    },
+    "Data": {
+     "object": "tree"
+    },
+    "Model": {
+     "file": "procedural:tree"
+    }
+   }
+  },
+  {
+   "id": "bench",
+   "name": "树下长椅",
+   "components": {
+    "Transform": {
+     "x": -440,
+     "y": 0,
+     "z": -150,
+     "rotY": 0
+    },
+    "Slot": {
+     "slot": "bench"
+    },
+    "Data": {
+     "object": "bench"
+    },
+    "Model": {
+     "file": "procedural:bench"
+    }
+   }
+  },
+  {
+   "id": "mailbox",
+   "name": "信箱",
+   "components": {
+    "Transform": {
+     "x": 275,
+     "y": 0,
+     "z": 525,
+     "rotY": 0
+    },
+    "Slot": {
+     "slot": "mailbox"
+    },
+    "Data": {
+     "object": "mailbox"
+    },
+    "Model": {
+     "file": "procedural:mailbox"
+    }
+   }
+  }
+ ]
+}

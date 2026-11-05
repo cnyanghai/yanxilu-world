@@ -21,7 +21,7 @@
 | 1.4 贴图 | 材质板（每种材质一张可平铺图，1024 像素对 1 米）→ 脚本两向无缝、按明度档调色 → 按组件布局合成到 768 像素 / 米，高度图推法线；旧化走顶点色 | `prep_textures.py` + `materials.py` | ≥ 500 像素 / 米（按原图像素量）；明度档三档以上 | 已实走 |
 | 1.5 看光 | Blender 里按 vis 打白天 / 夜晚、长焦出图，量明度 | `light.py` + `tools/tests/measure.py` | 白天中位 40 到 55、最暗 5% ≤ 12、受光 : 背光约 2.5；夜晚死黑 < 30% | 已实走 |
 | 1.6 导出入库 | 每件导分离式 glTF，预制体导 JSON（three 轴向、四元数、厘米、交互状态、灯）；入库组件模式：保留原点、面数超 15% 拒收、贴图按名去重进共用目录并出半分辨率一套、透明图存共用 PNG、顶点色兜底 | `export_kit.py` → `asset_import.py --components <目录> --pack <包>` | 拒收清单为空；props 表登记 | 已实走 |
-| 1.7 人形巡检 | 标准角色（characters 表 collider）在真实模型里走：门洞净高、能站的格都走得到、目标点有路、不悬空不陷地；交互物件按走近时的状态 | `node tools/tests/walk_check.mjs <房间>`；`camp_shot.py --walk` 放人形拍图 | 全过；提示项（低净空）逐条看 | 已实走 |
+| 1.7 人形巡检 | 标准角色（characters 表 collider）在真实模型里走：门洞净高、能站的格都走得到、目标点有路、不悬空不陷地；交互物件按走近时的状态 | `node tools/tests/walk_check.mjs <房间>`（巡检整块场地，`yard` 含书房）；`camp_shot.py --walk` 放人形拍图；挡路代码与游戏同一份（`world/sim/collide.js`、`world/sim/walls.js`），`play_test.py` 逐格对账 | 全过；提示项（低净空）逐条看 | 已实走 |
 | 1.8 进引擎看 | 真显卡截图（Windows Chrome 远程调试），各档位、手机竖屏、白天 / 夜晚 × 机位，量明度、draw call、下载量 | `tools/tests/camp_shot.py [--tier N] [--mobile] [--walk]` | 同 1.5 的明度；手机档首包 ≤ 8 MB、draw call ≤ 120 | 已实走 |
 
 家具与图生三维件的老入库方式（`asset_import.py <glb> --id --kind`：减面、Shaded 材质归位、按占地缩放）保留，营地小试没用到。
@@ -65,7 +65,7 @@
 
 ## 7. 工具清单
 
-在用：tables_check、sim_test、walk_check、measure、camp_shot、world_test、asset_import（家具模式 + 组件模式）、asset_shrink、vendor_min、`tools/blender/song_kit/`（prep_textures、materials、kitlib、lineup、shed、scatter、camp_props、light、export_kit）、`tools/blender/mcp_call.py`（直连 Blender 窗口）、bake.sh（书房烘焙）、fal_image3d、paint_verify、d2_decode（研究用）。
+在用：tables_check、sim_test、walk_check、play_test、song_yard（院子分层图与散布）、measure、camp_shot、world_test、asset_import（家具模式 + 组件模式）、asset_shrink、vendor_min、`tools/blender/song_kit/`（prep_textures、materials、kitlib、lineup、shed、scatter、camp_props、light、export_kit）、`tools/blender/mcp_call.py`（直连 Blender 窗口）、bake.sh（书房烘焙）、fal_image3d、paint_verify、d2_decode（研究用）。
 没有的：摆放编辑器、状态机与时间线播放器、图集打包、镂空率量尺、环境图烘焙。
 
 ## 8. 踩过的坑（排练 + 营地小试）

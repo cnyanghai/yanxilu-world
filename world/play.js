@@ -15,7 +15,8 @@ import { Composite } from "./render/post.js";
 import { Fire, flicker } from "./render/fire.js";
 import { buildShell, greyBox, slotBoxes } from "./render/shell.js";
 import { Presence } from "./render/presence.js";
-import { siteOf, siteGrid } from "./sim/site.js";
+import { siteOf, siteGrid, siteParts } from "./sim/site.js";
+import { rasterize, stamp, blockBits } from "./sim/collide.js";
 
 const Q = new URLSearchParams(location.search);
 const canvas = document.getElementById("gl");
@@ -33,7 +34,7 @@ const ROOM_ID = Q.get("room") || document.body.dataset.room || "camp";
 const ROOM = T.rooms[ROOM_ID]; if (!ROOM) throw new Error(`rooms 里没有 ${ROOM_ID}`);
 /* 场地：这间房若套在别的房间里（书房在院子里），搭整块场地；坐标一律用场地坐标（厘米），OFF 是本房原点在场地里的位置 */
 const { site: SITE, members: MEMBERS, offset: OFF } = siteOf(T.rooms, ROOM_ID);
-const PARTS = [{ room: SITE, off: [0, 0] }, ...MEMBERS.map((m) => ({ room: T.rooms[m.id], off: [m.x, m.z] }))];
+const PARTS = siteParts(SITE, MEMBERS, T.rooms);
 const isMobile = Math.min(innerWidth, innerHeight) < 700 || /Mobi|Android/i.test(navigator.userAgent);
 const TIER = detectTier(renderer, { isMobile });
 renderer.setPixelRatio(Q.has("shot") ? 1 : Math.min(devicePixelRatio || 1, [1, 1.5, 2][TIER]));
@@ -50,9 +51,10 @@ const deg = THREE.MathUtils.degToRad;
 /* ---------- 光：平行光（太阳 / 月亮，带阴影）+ 半球天光 + 局部点光 ---------- */
 const sun = new THREE.DirectionalLight(0xffffff, 1); scene.add(sun, sun.target);
 sun.castShadow = TIER >= 1; sun.shadow.mapSize.setScalar(TIER >= 2 ? 4096 : 2048);
-Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 60 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
+const SHADOW_EXT = (SITE.shadow?.half ?? 800) / 100;   /* 阴影相机半边长（rooms 表 shadow.half，厘米；默认 8 米，院子 12 米见方连房子高度要 9.5） */
+Object.assign(sun.shadow.camera, { left: -SHADOW_EXT, right: SHADOW_EXT, top: SHADOW_EXT, bottom: -SHADOW_EXT, near: 1, far: 60 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1); scene.add(hemi);
-const locals = [], glowMats = [], fires = [], interact = {};
+const locals = [], glowMats = [], fires = [], interact = {}; let groundExtent = Infinity;
 /* 交互物件切状态（门：ajar 半开 / open 全开 / closed 关）；现在只换朝向，动画以后接状态机 */
 function setState(id, st) { const it = interact[id], s = it?.I.states?.[st]; if (!s) return false; it.o.quaternion.identity(); it.o.rotation.set(0, deg(s.rotY || 0), 0); return true; }
 function addLight(parent, L) {
@@ -71,7 +73,7 @@ const models = {};
 function model(id) {   /* props 表找文件，同一件只加载一次，克隆共用几何与材质 */
   const a = T.props.assets[id]; if (!a) return Promise.reject(new Error("props 里没有 " + id));
   return models[id] ||= gltf.loadAsync(new URL("./" + a.model, location.href).href).then((g) => {
-    g.scene.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true;
+    g.scene.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true; o.userData.kind = a.kind;   /* 挡路按 kind：prop 按包围盒 */
       const m = o.material; if (m.map) m.map.anisotropy = 8;
       const g = /lantern/.test(m.name) ? ["#ffc890", 12] : /ember/.test(m.name) ? ["#ff6a1f", 5] : null;   /* 灯笼纸、篝火的炭：夜里自发光（同 Blender 看光） */
       if (g && !glowMats.includes(m)) { m.emissive = new THREE.Color(g[0]); m.userData.glow = g[1]; glowMats.push(m); } });
@@ -118,6 +120,7 @@ async function placePrefab(e, parent = scene) {
     if (!c.Interact && !c.Light) o.userData.static = true;
   }));
   mergeStatic(root);
+  root.userData.collide = true; root.userData.fadeName = e.id;   /* 按真实模型挡路（sim/collide.js）；挡住角色时整栋淡出 */
   parent.add(root);
 }
 /* 静态件按材质合并（手机档优化）：偏屋 30 来个件、每件两三种材质，原来一件一种材质一个 draw call；同名材质（同一套贴图）的几何烘上变换后合成一个网格。
@@ -128,7 +131,7 @@ function mergeStatic(root) {
     if (!o.userData.static) continue;
     o.traverse((m) => {
       if (!m.isMesh) return;
-      const g = m.geometry, key = m.material.name + "|" + Object.keys(g.attributes).sort().join(",") + (g.index ? "|i" : "|n");
+      const g = m.geometry, key = m.material.name + "|" + (m.userData.kind || "") + "|" + Object.keys(g.attributes).sort().join(",") + (g.index ? "|i" : "|n");
       const geo = g.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld));
       if (!groups.has(key)) groups.set(key, { mat: m.material, geos: [], cast: false }); const G = groups.get(key); G.geos.push(geo); G.cast ||= m.castShadow;
     });
@@ -136,7 +139,7 @@ function mergeStatic(root) {
   }
   for (const o of done) root.remove(o);
   for (const [key, G] of groups) {
-    const m = new THREE.Mesh(mergeGeometries(G.geos, false), G.mat); m.castShadow = G.cast; m.receiveShadow = true; m.name = "merged:" + key.split("|")[0]; root.add(m);
+    const m = new THREE.Mesh(mergeGeometries(G.geos, false), G.mat); m.castShadow = G.cast; m.receiveShadow = true; m.name = "merged:" + key.split("|")[0]; m.userData.kind = key.split("|")[1]; root.add(m);
   }
 }
 
@@ -160,6 +163,7 @@ function ground(e) {
         diffuseColor.rgb *= alb * (1.0 - uDamp * gm.g) * macro;`);
   };
   const m = new THREE.Mesh(geo, mat); m.receiveShadow = true; applyT(m, e.components.Transform); m.position.y -= 0.001; m.name = "ground"; scene.add(m);
+  groundExtent = E;
 }
 
 /* ---------- 散布：同种一个实例网格；表里是 Blender 的 (x, y) 平面，换成 three 的 (x, -y) ---------- */
@@ -172,6 +176,7 @@ async function scatter(e) {
       const mine = rows.map((r, i) => [r, i]).filter(([r]) => (r.length > 4 ? r[4] : 0) % ids.length === v); if (!mine.length) continue;
       let mesh = null; (await model(ids[v])).traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
       const im = new THREE.InstancedMesh(mesh.geometry, mesh.material, mine.length); im.castShadow = true; im.receiveShadow = true; im.name = ids[v];
+      im.userData.collide = true; im.userData.kind = T.props.assets[ids[v]]?.kind;
       mine.forEach(([r, i], k) => {
         p.set(r[0], 0, flip * r[1]); q.setFromAxisAngle(up, deg(r[2])); const z = r[3];
         if (cat === "tufts") s.set(z, z * (0.8 + 0.4 * ((i * 37) % 10) / 10), z); else if (cat === "stones") s.set(z, z, z * 0.8); else s.set(z, 1, z);
@@ -223,7 +228,7 @@ await Promise.all(PARTS.flatMap(({ room, off }) => {
     if (c.Prefab) return placePrefab(e, parent);
     if (c.Model && c.Data) return placeModel(e, parent, room.id);
     if (c.Vfx) return getJSON("./" + c.Vfx.file).then((def) => { const f = new Fire(def); applyT(f.group, c.Transform); parent.add(f.group); fires.push(f); });
-    if (c.Model) return model(c.Model.file).then((m) => { const o = m.clone(); applyT(o, c.Transform); o.name = e.id; parent.add(o); if (c.Light) addLight(o, c.Light); });
+    if (c.Model) return model(c.Model.file).then((m) => { const o = m.clone(); applyT(o, c.Transform); o.name = e.id; o.userData.collide = true; parent.add(o); if (c.Light) addLight(o, c.Light); });
     if (c.Ground) return ground(e);
     if (c.Scatter) return scatter(e);
     if (c.Light) { const g = new THREE.Group(); applyT(g, c.Transform); parent.add(g); addLight(g, c.Light); }
@@ -234,13 +239,57 @@ await Promise.all(PARTS.flatMap(({ room, off }) => {
 let presence = null; const shells = [];
 const hasWalls = (r) => r.tiles?.walls?.some((w) => T.tiles.wall[w.type]?.segment !== "none");
 const memberRects = PARTS.slice(1).map(({ room, off }) => ({ x0: off[0] - room.size.w / 2, x1: off[0] + room.size.w / 2, z0: off[1] - room.size.d / 2, z1: off[1] + room.size.d / 2 }));
-for (const [i, { room, off }] of PARTS.entries()) if (hasWalls(room)) { const sh = buildShell(room, T.tiles, { offset: off, skip: i === 0 ? memberRects : [] }); scene.add(sh.group); shells.push(sh); }
+const hasGround = (r) => !!T.presets[r.id]?.entities.some((e) => e.components.Ground);   /* 有地面分层的房间（院子）不画瓦片地板 */
+for (const [i, { room, off }] of PARTS.entries()) if (hasWalls(room)) { const sh = buildShell(room, T.tiles, { offset: off, skip: i === 0 ? memberRects : [], floor: !hasGround(room) }); scene.add(sh.group); shells.push(sh); }
+let nav = null;
 if (ROOM.follow && !Q.get("shot")) {
-  const grid = siteGrid(SITE, MEMBERS, T.rooms, T.objects, shells.flatMap((s) => s.blocks));
+  const grid = siteGrid(SITE, MEMBERS, T.rooms, T.objects, T.tiles);
+  nav = buildNav(grid);
   const door = ROOM.door ? [ROOM.door.x + OFF[0], ROOM.size.d / 2 - 35 + OFF[1]] : [OFF[0], OFF[1]];
-  /* 会挡住人的：墙段 + 高过 1.5 米的家具与树（书墙 2.6 米，人走到屋后会被整个挡住） */
-  const tall = []; scene.traverse((o) => { if (!o.userData.objectId) return; const b = new THREE.Box3().setFromObject(o); if (b.max.y - b.min.y >= 1.5) o.traverse((m) => { if (m.isMesh) { m.userData.side = o.userData.objectId; m.userData.fadeKey = o.uuid; tall.push(m); } }); });
-  presence = new Presence({ scene, camera, dom: canvas, grid, room: ROOM, walls: [...shells.flatMap((s) => s.walls), ...tall], spawn: ROOM.walk?.spawn && ROOM === SITE ? ROOM.walk.spawn : door });
+  /* 会挡住人的：墙段 + 高过 1.5 米的家具、树与房子（书墙 2.6 米，人走到屋后会被整个挡住；偏屋 3.75 米，人走到它北头时被屋顶挡住） */
+  const tall = []; scene.traverse((o) => { const key = o.userData.objectId || o.userData.fadeName; if (!key) return; const b = new THREE.Box3().setFromObject(o); if (b.max.y - b.min.y >= 1.5) o.traverse((m) => { if (m.isMesh && !m.isInstancedMesh) { m.userData.side = key; m.userData.fadeKey = o.uuid; tall.push(m); } }); });
+  /* 镜头分区：套在里面的房间（书房）内用它自己的 follow，其余用场地的（院子从西南看、拉远） */
+  const view = (F = {}) => ({ az: F.az ?? 20, pitch: F.pitch ?? 40, frameH: (F.frameH ?? 420) / 100 });
+  const zones = PARTS.slice(1).filter(({ room }) => room.follow).map(({ room, off }) => ({ id: room.id, rect: { x0: off[0] - room.size.w / 2, x1: off[0] + room.size.w / 2, z0: off[1] - room.size.d / 2, z1: off[1] + room.size.d / 2 }, ...view(room.follow) }));
+  presence = new Presence({ scene, camera, dom: canvas, grid, room: ROOM, walls: [...shells.flatMap((s) => s.walls), ...tall], spawn: ROOM.walk?.spawn && ROOM === SITE ? ROOM.walk.spawn : door,
+    base: { id: SITE.id, ...view(SITE.follow || ROOM.follow) }, zones });
+}
+/* 寻路网盖上按真实模型算的挡路（world/sim/collide.js，人形巡检同一份）：收集不占槽位的实体的三角面（场地坐标，米），交互物件按 Interact.walk 的状态 */
+function buildNav(grid) {
+  const t0 = performance.now(), C = T.raw.characters.skeletons.humanoid.collider, col = { height: C.height / 100, radius: C.radius / 100, maxStep: C.maxStep / 100 };
+  const saved = []; for (const [id, it] of Object.entries(interact)) if (it.I.walk) { saved.push([it.o, it.o.quaternion.clone()]); setState(id, it.I.walk); }
+  scene.updateMatrixWorld(true);
+  /* 一"件"一项（同巡检）：预制体里的每一件、单件模型整件、散布的每一个实例；kind 为 prop 的件按整件包围盒算 */
+  const items = [], v = new THREE.Vector3(), m4 = new THREE.Matrix4(), units = [];
+  scene.traverse((root) => { if (!root.userData.collide) return; if (root.isInstancedMesh) for (let k = 0; k < root.count; k++) units.push([root, k]); else if (root.userData.fadeName) for (const ch of root.children) units.push([ch]); else units.push([root]); });
+  for (const [obj, k] of units) {
+    const parts = [], meshes = []; let kind = null;
+    obj.traverse((o) => { if (o.isMesh && !(o.material.alphaTest > 0)) meshes.push(o); });   /* 透明裁切（散草、茅草檐口的草帘）不挡 */
+    for (const o of meshes) {
+      const pos = o.geometry.attributes.position, idx = o.geometry.index, n = idx ? idx.count : pos.count, P = new Float64Array(n * 3);
+      if (o.isInstancedMesh) { o.getMatrixAt(k, m4); m4.premultiply(o.matrixWorld); } else m4.copy(o.matrixWorld);
+      for (let i = 0; i < n; i++) { v.fromBufferAttribute(pos, idx ? idx.getX(i) : i).applyMatrix4(m4); P[i * 3] = v.x; P[i * 3 + 1] = v.y; P[i * 3 + 2] = v.z; }
+      parts.push(P); if (o.userData.kind === "prop" || !kind) kind = o.userData.kind;
+    }
+    if (!parts.length) continue;
+    const tris = new Float64Array(parts.reduce((a, p) => a + p.length, 0)); let off = 0; for (const p of parts) { tris.set(p, off); off += p.length; }
+    items.push({ id: obj.name + (k !== undefined ? "#" + k : ""), kind, tris });
+  }
+  for (const [o, q] of saved) o.quaternion.copy(q);
+  scene.updateMatrixWorld(true);
+  const W = SITE.size.w / 100, D = SITE.size.d / 100, before = grid.block.reduce((a, b) => a + b, 0);
+  const R = rasterize(items, { x0: -W / 2, z0: -D / 2, w: W, d: D, res: 0.025 }, col, groundExtent), S = stamp(grid, R, col);
+  return { items: items.length, tris: items.reduce((a, it) => a + it.tris.length / 9, 0), ms: Math.round(performance.now() - t0), bySlotOrWall: before, byModel: grid.block.reduce((a, b) => a + b, 0) - before, grid, why: S.why };
+}
+/* 交互门：角色走近（1.6 米内）推到 Interact.walk 的状态，走远回到摆放的状态；按角度缓动 */
+const doors = Object.values(interact).filter((it) => it.I.walk && it.I.states?.[it.I.walk]).map((it) => ({ ...it, ang: it.I.states[it.I.default]?.rotY ?? 0, wp: new THREE.Vector3() }));
+function doorsUpdate(dt) {
+  if (!presence) return; const p = presence.walker.pos;
+  for (const d of doors) {
+    d.o.getWorldPosition(d.wp); const near = Math.hypot(d.wp.x * 100 - p[0], d.wp.z * 100 - p[1]) < 160;
+    const goal = d.I.states[near ? d.I.walk : d.I.default]?.rotY ?? 0; if (Math.abs(goal - d.ang) < 0.05) continue;
+    d.ang += (goal - d.ang) * (1 - Math.exp(-dt * 6)); d.o.rotation.set(0, deg(d.ang), 0);
+  }
 }
 setPeriod(period);
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; if (shot && !presence?.enabled) setShot(shot); else camera.updateProjectionMatrix(); }
@@ -249,7 +298,7 @@ let frames = 0, last = performance.now(), elapsed = 0;   /* 计时：three 的 C
 function frame() {
   renderer.info.reset();
   const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now; elapsed += dt; const t = elapsed;
-  if (presence) presence.update(dt);
+  if (presence) { presence.update(dt); doorsUpdate(dt); }
   for (const f of fires) f.update(t, camera, renderer.domElement.height);
   for (const l of locals) if (l.userData.flicker && l.userData.base) l.intensity = l.userData.base * (1 + l.userData.flicker * flicker(t, l.userData.seed));
   for (const m of glowMats) if (m.userData.base) m.emissiveIntensity = m.userData.base * (1 + 0.06 * flicker(t, 3.3));
@@ -260,7 +309,7 @@ function frame() {
 function gpu() { const g = renderer.getContext(), x = g.getExtension("WEBGL_debug_renderer_info"); return x ? g.getParameter(x.UNMASKED_RENDERER_WEBGL) : "?"; }
 /* 已下载字节（同源资源的压缩后正文大小；缓存命中的不算） */
 function bytes() { return performance.getEntriesByType("resource").reduce((s, r) => s + (r.encodedBodySize || 0), 0) + (performance.getEntriesByType("navigation")[0]?.encodedBodySize || 0); }
-function stats() { const i = renderer.info.render; return `档位 ${TIER} · 贴图 ${TEX_LO ? "半分辨率" : "原分辨率"} · draw call ${i.calls} · 三角面 ${i.triangles.toLocaleString()} · 下载 ${(bytes() / 1e6).toFixed(1)} MB · 加载 ${((performance.now() - t0) / 1000).toFixed(1)} 秒 · ${gpu()}`; }
+function stats() { const i = renderer.info.render; return `档位 ${TIER} · 贴图 ${TEX_LO ? "半分辨率" : "原分辨率"} · draw call ${i.calls} · 三角面 ${i.triangles.toLocaleString()} · 下载 ${(bytes() / 1e6).toFixed(1)} MB · 加载 ${((performance.now() - t0) / 1000).toFixed(1)} 秒${nav ? ` · 挡路 ${nav.ms} 毫秒` : ""} · ${gpu()}`; }
 document.querySelectorAll("[data-period]").forEach((b) => b.addEventListener("click", () => setPeriod(b.dataset.period)));
 document.querySelectorAll("[data-shot]").forEach((b) => b.addEventListener("click", () => setShot(b.dataset.shot)));
 /* 人形巡检看图用（tools/tests/camp_shot.py --walk）：1.5 米灰色素模人形、地上一串蓝点标路线；坐标厘米，three 轴向 */
@@ -282,5 +331,7 @@ function follow() { if (presence) { presence.enabled = true; presence.snap = tru
 function at(roomId, x, z) { const p = PARTS.find((q) => q.room.id === roomId) || PARTS[0]; return [x + p.off[0], z + p.off[1]]; }
 window.__play = window.__camp = { ready: () => ready, room: ROOM_ID, site: SITE.id, at, setPeriod, setShot, setState, figure, path, follow,
   walkTo: (x, z) => presence?.walkTo(x, z), presence: () => presence?.info() || null,
+  doors: () => doors.map((d) => ({ id: d.o.name, ang: +d.ang.toFixed(1) })),
+  nav: () => nav && { cols: nav.grid.cols, rows: nav.grid.rows, cell: nav.grid.cell, bits: blockBits(nav.grid), items: nav.items, tris: nav.tris, ms: nav.ms, bySlotOrWall: nav.bySlotOrWall, byModel: nav.byModel },
   info: () => ({ ...renderer.info.render, tier: TIER, gpu: gpu(), texLo: TEX_LO, bytes: bytes(), files: performance.getEntriesByType("resource").length }), scene, renderer, camera };
 frame();

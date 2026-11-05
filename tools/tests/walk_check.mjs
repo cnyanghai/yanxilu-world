@@ -1,26 +1,30 @@
 // 人形巡检（PIPELINE 1.5，2026-11-05）：标准角色在真实模型里走一遍。不开浏览器，Node 18 即可。
 // 用法：node tools/tests/walk_check.mjs [房间=camp] [--as-placed]（默认门这类交互物件按 Interact.walk 状态，即角色走近时推开的样子）
-//   1. 读房间、预设、预制体、散布表、模型（glTF 里的三角面），在 2.5 厘米的采样网格上算每点的地面高、挡身体的东西、头顶最低的东西；
-//      透明裁切的材质（散草、草丛）不挡；kind 为 prop 的件（篝火、灯笼）按包围盒整块算。
-//   2. 按引擎的寻路格（rooms 表 grid.cell，world/sim/grid.js 的 Grid）判每格能不能站：角色圆柱半径内全部可站、头顶净空 ≥ 身高。
+//   巡检的是整块场地：开 study 巡检它所在的 yard（院子连书房，一张寻路网）。
+//   1. 读场地与套在里面的房间的预设、预制体、散布表、模型（glTF 里的三角面）；占槽位的家具与墙块按 world/sim/site.js（槽位矩形 + sim/walls.js 的墙），
+//      其余按 world/sim/collide.js 在 2.5 厘米的采样网格上算每点的地面高、挡身体的东西、头顶最低的东西（透明裁切的散草不挡；kind 为 prop 的按包围盒）。
+//      这两步与游戏（world/play.js）调用的是同一份代码，游戏里怎么挡路，这里就怎么测；寻路格的阻挡位串写进报告，play_test.py 拿它和游戏对账。
+//   2. 寻路格（rooms 表 grid.cell）判每格能不能站：角色圆柱半径内全部可站、头顶净空 ≥ 身高。
 //   3. 检查：出发点到每个目标点有路（Grid.astar）；所有能站的格都走得到（没有被围死的孤岛）；把每个能走的格走一遍（巡检路线）；
 //      门洞净高 ≥ 身高 × doorClearance；没有能站的格落在地面之外；落地的建筑件不悬空、不陷地。
-//   4. 出 tools/out/<房间>/walk_check.json 与俯视图 walk_check.png（上为屋后、下为正面，和游戏镜头同一左右）。任何一项不过，退出码 1。
+//   4. 出 tools/out/<场地>/walk_check.json 与俯视图 walk_check.png（画面朝向同游戏镜头：镜头在哪一侧，那一侧在下）。任何一项不过，退出码 1。
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { deflateSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Grid } from "../../world/sim/grid.js";
+import { siteOf, siteGrid, siteParts } from "../../world/sim/site.js";
+import { rasterize, stamp, blockBits } from "../../world/sim/collide.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const W = (p) => JSON.parse(readFileSync(join(ROOT, "world", p), "utf8"));
 const args = process.argv.slice(2), ROOM_ID = args.find((a) => !a.startsWith("--")) || "camp", AS_PLACED = args.includes("--as-placed");   /* 默认交互物件按 Interact.walk 状态（门推开）；--as-placed 按摆放原样 */
-const rooms = W("data/rooms.json").rooms, room = rooms.find((r) => r.id === ROOM_ID);
-const props = W("data/props.json").assets, chars = W("data/characters.json");
-const preset = W(`data/presets/${room.preset}.json`), walk = room.walk;
+const rooms = Object.fromEntries(W("data/rooms.json").rooms.map((r) => [r.id, r])), objects = Object.fromEntries(W("data/objects.json").objects.map((o) => [o.id, o]));
+const tiles = W("data/tiles.json"), props = W("data/props.json").assets, chars = W("data/characters.json");
+const { site: room, members } = siteOf(rooms, ROOM_ID), walk = room.walk;   /* 巡检整块场地（开书房也巡检它所在的院子） */
+if (!walk) throw new Error(`房间 ${room.id} 没有 walk（出发点与目标点）`);
 const col = chars.skeletons[walk.skeleton || "humanoid"].collider;
 const CH = col.height / 100, RAD = col.radius / 100, STEP = col.maxStep / 100, DOOR_H = CH * (col.doorClearance || 1.3);
-const RES = 0.025, SW = room.size.w / 100, SD = room.size.d / 100, NX = Math.round(SW / RES), NZ = Math.round(SD / RES);
+const COL = { height: CH, radius: RAD, maxStep: STEP };
 
 /* ---------- 小矩阵（列主序，同 three） ---------- */
 const compose = (t = [0, 0, 0], q = [0, 0, 0, 1], s = [1, 1, 1]) => {
@@ -63,83 +67,42 @@ function triangles(id) {
   return (meshCache[id] = { tris, kind: a.kind });
 }
 
-/* ---------- 场景实例 ---------- */
+/* ---------- 场景实例：场地与套在里面的房间的预设；占槽位（有 Data）的家具按槽位挡路，不在这里（同游戏 world/play.js） ---------- */
 const inst = []; let groundExtent = 0;
-for (const e of preset.entities) {
-  const c = e.components, M = tMatrix(c.Transform);
-  if (c.Prefab) {
-    const pf = W(c.Prefab.file.replace(/^\.?\//, ""));
-    for (const pe of pf.entities) if (pe.components.Model) {
-      let t = pe.components.Transform; const I = pe.components.Interact;
-      if (I && !AS_PLACED && I.walk && I.states?.[I.walk]) { const { q, ...rest } = t; t = { ...rest, rotY: I.states[I.walk].rotY }; }   /* 交互物件换成走近时的状态 */
-      inst.push({ id: pe.id, model: pe.components.Model.file, m: mul(M, tMatrix(t)) });
+for (const { room: pr, off } of siteParts(room, members, rooms)) {
+  if (!pr.preset) continue; const preset = W(`data/presets/${pr.preset}.json`), O = tMatrix({ x: off[0], z: off[1] });
+  for (const e of preset.entities) {
+    const c = e.components; if (c.Data) continue; const M = mul(O, tMatrix(c.Transform));
+    if (c.Prefab) {
+      const pf = W(c.Prefab.file.replace(/^\.?\//, ""));
+      for (const pe of pf.entities) if (pe.components.Model) {
+        let t = pe.components.Transform; const I = pe.components.Interact;
+        if (I && !AS_PLACED && I.walk && I.states?.[I.walk]) { const { q, ...rest } = t; t = { ...rest, rotY: I.states[I.walk].rotY }; }   /* 交互物件换成走近时的状态 */
+        inst.push({ id: pe.id, model: pe.components.Model.file, m: mul(M, tMatrix(t)) });
+      }
+    }
+    if (c.Model && props[c.Model.file]) inst.push({ id: e.id, model: c.Model.file, m: M });
+    if (c.Ground && !off[0] && !off[1]) groundExtent = (c.Ground.extent || c.Ground.size) / 100;
+    if (c.Scatter) {
+      const SC = W(c.Scatter.file), flip = c.Scatter.axes === "blender" ? -1 : 1;
+      for (const [cat, ids] of Object.entries(c.Scatter.models)) (SC[cat] || []).forEach((r, i) => {
+        const v = (r.length > 4 ? r[4] : 0) % ids.length, z = r[3];
+        const s = cat === "tufts" ? [z, z, z] : cat === "stones" ? [z, z, z * 0.8] : [z, 1, z];
+        inst.push({ id: `${cat}${i}`, model: ids[v], m: mul(M, compose([r[0], 0, flip * r[1]], quatY(deg(r[2])), s)) });
+      });
     }
   }
-  if (c.Model) inst.push({ id: e.id, model: c.Model.file, m: M });
-  if (c.Ground) groundExtent = (c.Ground.extent || c.Ground.size) / 100;
-  if (c.Scatter) {
-    const SC = W(c.Scatter.file), flip = c.Scatter.axes === "blender" ? -1 : 1;
-    for (const [cat, ids] of Object.entries(c.Scatter.models)) (SC[cat] || []).forEach((r, i) => {
-      const v = (r.length > 4 ? r[4] : 0) % ids.length, z = r[3];
-      const s = cat === "tufts" ? [z, z, z] : cat === "stones" ? [z, z, z * 0.8] : [z, 1, z];
-      inst.push({ id: `${cat}${i}`, model: ids[v], m: mul(M, compose([r[0], 0, flip * r[1]], quatY(deg(r[2])), s)) });
-    });
-  }
 }
 
-/* ---------- 采样网格：每个实例在每个采样点的竖向占用区间 [低, 高]，按实例合并 ---------- */
-const spans = new Array(NX * NZ);   /* 每点 [[低, 高, 实例序号], ...] */
-const ix = (x) => Math.floor((x + SW / 2) / RES), iz = (z) => Math.floor((z + SD / 2) / RES);
-const sx = (i) => -SW / 2 + (i + 0.5) * RES, sz = (j) => -SD / 2 + (j + 0.5) * RES;
-const placed = [];
-inst.forEach((it, k) => {
-  const { tris, kind } = triangles(it.model), W3 = tris.map((t) => t.map((p) => apply(it.m, p)));
-  let lo = Infinity, hi = -Infinity; for (const t of W3) for (const p of t) { lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); }
-  placed.push({ id: it.id, model: it.model, kind, minY: lo, maxY: hi });
-  const local = new Map(), put = (i, j, y0, y1) => { if (i < 0 || j < 0 || i >= NX || j >= NZ) return; const key = j * NX + i, s = local.get(key); if (s) { s[0] = Math.min(s[0], y0); s[1] = Math.max(s[1], y1); } else local.set(key, [y0, y1]); };
-  if (kind === "prop") {   /* 道具按包围盒整块（篝火不许走进去；灯笼挂在头顶） */
-    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const t of W3) for (const p of t) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[2]); z1 = Math.max(z1, p[2]); }
-    for (let j = iz(z0); j <= iz(z1); j++) for (let i = ix(x0); i <= ix(x1); i++) put(i, j, lo, hi);
-  } else for (const [a, b, c] of W3) {
-    const ar = (b[0] - a[0]) * (c[2] - a[2]) - (c[0] - a[0]) * (b[2] - a[2]); if (Math.abs(ar) < 1e-9) continue;   /* 竖直面：封闭体的顶底面已覆盖 */
-    const i0 = ix(Math.min(a[0], b[0], c[0])), i1 = ix(Math.max(a[0], b[0], c[0])), j0 = iz(Math.min(a[2], b[2], c[2])), j1 = iz(Math.max(a[2], b[2], c[2]));
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-      const px = sx(i), pz = sz(j);
-      const w1 = ((b[0] - px) * (c[2] - pz) - (c[0] - px) * (b[2] - pz)) / ar, w2 = ((c[0] - px) * (a[2] - pz) - (a[0] - px) * (c[2] - pz)) / ar, w3 = 1 - w1 - w2;
-      if (w1 < -1e-6 || w2 < -1e-6 || w3 < -1e-6) continue;
-      const y = w1 * a[1] + w2 * b[1] + w3 * c[1]; put(i, j, y, y);
-    }
-  }
-  for (const [key, [y0, y1]] of local) (spans[key] ||= []).push([y0, y1, k]);
-});
-
-/* ---------- 每个采样点：地面高、挡不挡身体、头顶净空与是谁 ---------- */
-const floorH = new Float32Array(NX * NZ), blocked = new Uint8Array(NX * NZ), head = new Float32Array(NX * NZ).fill(Infinity), headBy = new Int32Array(NX * NZ).fill(-1), noGround = new Uint8Array(NX * NZ);
-for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) {
-  const key = j * NX + i, S = spans[key] || [];
-  if (Math.abs(sx(i)) > groundExtent / 2 || Math.abs(sz(j)) > groundExtent / 2) noGround[key] = 1;
-  let f = 0; for (const [y0, y1] of S) if (y1 <= STEP && y1 > f) f = y1;            /* 跨得上的（踏步石、小石块、灰烬）当地面 */
-  floorH[key] = f;
-  for (const [y0, y1, k] of S) {
-    if (y1 <= f + 1e-4) continue;
-    if (y1 > f + STEP && y0 < f + CH) { blocked[key] = 1; continue; }              /* 挡身体 */
-    if (y0 >= f + CH - 1e-4 && y0 - f < head[key]) { head[key] = y0 - f; headBy[key] = k; }   /* 头顶上的 */
-  }
-}
-
-/* ---------- 寻路格：角色圆柱放在格心能不能站 ---------- */
-const grid = new Grid(room), R = Math.ceil(RAD / RES);
-const cellHead = new Float32Array(grid.cols * grid.rows).fill(Infinity), cellHeadBy = new Int32Array(grid.cols * grid.rows).fill(-1), cellWhy = new Array(grid.cols * grid.rows).fill("");
-for (let r = 0; r < grid.rows; r++) for (let c = 0; c < grid.cols; c++) {
-  const [cx, cz] = grid.center(c, r).map((v) => v / 100), ci = ix(cx), cj = iz(cz), gi = grid.idx(c, r); let bad = "";
-  for (let dj = -R; dj <= R && !bad; dj++) for (let di = -R; di <= R && !bad; di++) {
-    const i = ci + di, j = cj + dj; if ((sx(i) - cx) ** 2 + (sz(j) - cz) ** 2 > RAD * RAD) continue;
-    if (i < 0 || j < 0 || i >= NX || j >= NZ) { bad = "出界"; break; }
-    const key = j * NX + i;
-    if (noGround[key]) bad = "无地面"; else if (blocked[key]) bad = "挡"; else if (head[key] < cellHead[gi]) { cellHead[gi] = head[key]; cellHeadBy[gi] = headBy[key]; }
-  }
-  cellWhy[gi] = bad; if (bad) grid.block[gi] = 1;
-}
+/* ---------- 采样网格与寻路格：world/sim/collide.js（游戏同一份） ---------- */
+const items = inst.map((it) => { const { tris, kind } = triangles(it.model), P = new Float64Array(tris.length * 9); let o = 0;
+  for (const t of tris) for (const p of t) { const q = apply(it.m, p); P[o++] = q[0]; P[o++] = q[1]; P[o++] = q[2]; }
+  return { id: it.id, model: it.model, kind, tris: P }; });
+const SW = room.size.w / 100, SD = room.size.d / 100;
+const RR = rasterize(items, { x0: -SW / 2, z0: -SD / 2, w: SW, d: SD, res: 0.025 }, COL, groundExtent || Infinity);
+const { NX, NZ, res: RES, ix, iz, sx, sz, blocked, head, placed } = RR;
+const grid = siteGrid(room, members, rooms, objects, tiles), preBlocked = grid.block.slice();
+const ST = stamp(grid, RR, COL), cellHead = ST.head, cellHeadBy = ST.headBy, cellWhy = ST.why;
 
 /* ---------- 检查 ---------- */
 const fails = [], notes = [], N8 = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, Math.SQRT2], [1, -1, Math.SQRT2], [-1, 1, Math.SQRT2], [-1, -1, Math.SQRT2]];
@@ -195,22 +158,26 @@ while (left > 0) {
 }
 
 /* ---------- 输出 ---------- */
-const OUT = join(ROOT, "tools", "out", ROOM_ID); mkdirSync(OUT, { recursive: true });
-const report = { room: ROOM_ID, doorState: AS_PLACED ? "as-placed" : "interact-walk", character: { height: CH, radius: RAD, maxStep: STEP, doorClearance: DOOR_H },
+const OUT = join(ROOT, "tools", "out", room.id); mkdirSync(OUT, { recursive: true });
+const report = { room: room.id, opened: ROOM_ID, doorState: AS_PLACED ? "as-placed" : "interact-walk", character: { height: CH, radius: RAD, maxStep: STEP, doorClearance: DOOR_H },
   grid: { cell: grid.cell, cols: grid.cols, rows: grid.rows, sample: RES }, instances: inst.length,
-  cells: { walkable: walkable.length, reachable: reachable.length, blocked: grid.cols * grid.rows - walkable.length }, islands,
+  cells: { walkable: walkable.length, reachable: reachable.length, blocked: grid.cols * grid.rows - walkable.length, bySlotOrWall: preBlocked.reduce((a, b) => a + b, 0) }, islands,
+  bits: blockBits(grid),
   door: { cells: doorCells.length, minHeadroom: doorMin === Infinity ? null : +doorMin.toFixed(3), need: +DOOR_H.toFixed(3), at: doorCells },
   routes, tour: { legs, steps, meters: +meters.toFixed(1), cells: tour.map(([c, r]) => grid.center(c, r)) }, notes, fails, pass: fails.length === 0 };
 const SUFFIX = AS_PLACED ? "_as_placed" : "";
 writeFileSync(join(OUT, `walk_check${SUFFIX}.json`), JSON.stringify(report));
 
-/* 俯视图：每采样点 1 像素（480 × 480），上为屋后（+z）、下为正面（-z），左右同游戏镜头（+x 在左）。蓝 = 巡检路线、橙 = 提醒（净空低、孤岛），不用红绿 */
-const img = new Uint8Array(NX * NZ * 3), px = (i, j, rgb) => { if (i < 0 || j < 0 || i >= NX || j >= NZ) return; const o = ((NZ - 1 - j) * NX + (NX - 1 - i)) * 3; img[o] = rgb[0]; img[o + 1] = rgb[1]; img[o + 2] = rgb[2]; };
+/* 俯视图：每采样点 1 像素，朝向同游戏镜头——营地镜头在 -z 侧（上为 +z、+x 在左），有跟随镜头的场地镜头在 +z 侧（上为 -z、+x 在右）。
+   深灰 = 模型挡身体，灰褐 = 槽位与墙，蓝 = 巡检路线、橙 = 提醒（净空低、孤岛），不用红绿 */
+const FLIP = !room.follow;
+const img = new Uint8Array(NX * NZ * 3), px = (i, j, rgb) => { if (i < 0 || j < 0 || i >= NX || j >= NZ) return; const o = ((FLIP ? NZ - 1 - j : j) * NX + (FLIP ? NX - 1 - i : i)) * 3; img[o] = rgb[0]; img[o + 1] = rgb[1]; img[o + 2] = rgb[2]; };
 const cellOfS = (i, j) => grid.cellOf(sx(i) * 100, sz(j) * 100);
 for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) {
   const key = j * NX + i, [c, r] = cellOfS(i, j), gi = grid.idx(c, r), ok = !grid.block[gi];
   let rgb = blocked[key] ? [58, 54, 50] : head[key] < Infinity ? [178, 166, 140] : [222, 212, 188];
   if (!ok && !blocked[key]) rgb = rgb.map((v) => Math.round(v * 0.72));                         /* 圆柱站不下的空地：压暗 */
+  if (preBlocked[gi] && !blocked[key]) rgb = [120, 106, 92];                                      /* 槽位与墙 */
   if (ok && cellHead[gi] < DOOR_H - 0.005 && !/wall_door/.test(inst[cellHeadBy[gi]]?.model || "")) rgb = [232, 150, 50];   /* 净空低 */
   if (ok && reach.dist[gi] === Infinity) rgb = [232, 150, 50];
   if ((i * RES * 100) % grid.cell < 0.01 || (j * RES * 100) % grid.cell < 0.01) rgb = rgb.map((v) => Math.round(v * 0.93));   /* 格线 */
@@ -230,7 +197,7 @@ const raw = Buffer.alloc(NZ * (NX * 3 + 1)); for (let y = 0; y < NZ; y++) { raw[
 const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(NX, 0); ihdr.writeUInt32BE(NZ, 4); ihdr[8] = 8; ihdr[9] = 2;
 writeFileSync(join(OUT, `walk_check${SUFFIX}.png`), Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]));
 
-console.log(`人形巡检 · ${room.name}（${ROOM_ID}，交互物件：${AS_PLACED ? "按摆放原样" : "按走近时的状态"}）  角色 身高 ${CH} 半径 ${RAD} 台阶 ${STEP}  寻路格 ${grid.cell} 厘米 ${grid.cols} × ${grid.rows}  实例 ${inst.length}`);
+console.log(`人形巡检 · ${room.name}（${room.id}${members.length ? "，含 " + members.map((m) => m.id).join("、") : ""}，交互物件：${AS_PLACED ? "按摆放原样" : "按走近时的状态"}）  角色 身高 ${CH} 半径 ${RAD} 台阶 ${STEP}  寻路格 ${grid.cell} 厘米 ${grid.cols} × ${grid.rows}  实例 ${inst.length}`);
 console.log(`  能站 ${walkable.length} 格，走得到 ${reachable.length}，孤岛 ${islands.length}`);
 for (const [n, r] of Object.entries(routes)) console.log(`  到「${n}」：${r ? `${r.meters} 米，最低净空 ${r.minHeadroom ?? "露天"}${r.under ? "（" + r.under + "）" : ""}` : "走不到"}`);
 console.log(`  门洞：${doorCells.length} 格，净高 ${report.door.minHeadroom ?? "—"} 米（要 ≥ ${DOOR_H.toFixed(2)}）`);
