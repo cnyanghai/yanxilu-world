@@ -102,11 +102,11 @@ export class Presence {
     for (const y of [0.9, 1.4]) {
       const to = new THREE.Vector3(this.walker.pos[0] / 100, y, this.walker.pos[1] / 100), dir = to.clone().sub(from), len = dir.length();
       this.ray.set(from, dir.normalize()); this.ray.far = len - 0.2;
-      for (const h of this.ray.intersectObjects(this.walls, false)) hit.add(h.object);
+      for (const h of this.ray.intersectObjects(this.walls, false)) hit.add(h.object.userData.fadeKey || h.object.uuid);
     }
     this.ray.far = Infinity;
-    for (const w of this.walls) {
-      const goal = hit.has(w) ? 0.15 : 1, cur = this.fade.get(w), next = cur + (goal - cur) * (1 - Math.exp(-dt * 8));
+    for (const w of this.walls) {   /* 同一件家具的几块（书墙的板与隔板）一起淡出 */
+      const goal = hit.has(w.userData.fadeKey || w.uuid) ? 0.15 : 1, cur = this.fade.get(w), next = cur + (goal - cur) * (1 - Math.exp(-dt * 8));
       this.fade.set(w, next); w.material.opacity = next; w.material.depthWrite = next > 0.98; w.castShadow = true;
     }
   }

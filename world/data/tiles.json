@@ -70,14 +70,16 @@
    "segment": "fence_bamboo_1m",
    "h": 120,
    "t": 6,
-   "nearLowered": false
+   "nearLowered": true
   },
   "gate": {
    "name": "门楼",
    "segment": "yardgate_tiled",
    "h": 260,
    "t": 60,
-   "nearLowered": false
+   "nearLowered": true,
+   "opening": true,
+   "note": "院门：开口，两侧立门柱，人能走过；在近侧时随近墙压低（2026-11-05：门柱 2.6 米挡住镜头前的人）"
   },
   "open": {
    "name": "露天（无墙）",

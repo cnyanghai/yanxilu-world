@@ -334,7 +334,114 @@
    "ibl": 0.4,
    "characterShadow": 0.9,
    "characterBrightness": 0.4,
-   "itemBrightness": 2.0
+   "itemBrightness": 2.0,
+   "physical": {
+    "key": {
+     "color": "#f5e6c0",
+     "power": 6.3,
+     "dir": [
+      -0.585,
+      -0.731,
+      -0.35
+     ]
+    },
+    "ambient": {
+     "sky": "#c4d2e8",
+     "ground": "#5e5444",
+     "power": 1.45
+    },
+    "fog": {
+     "color": "#3b3129",
+     "density": 0.0
+    },
+    "vignette": 0.22,
+    "ao": {
+     "strength": 0.6,
+     "radius": 0.45
+    },
+    "contrast": 1.05,
+    "localLightMul": 1,
+    "note": "实时光（world/play.js，院子与书房合成的场地用这一组；同营地白天）；书房里的灯按 study 的 localLights 开"
+   }
+  },
+  {
+   "id": "yard:night",
+   "room": "yard",
+   "period": "night",
+   "exposure": 0.6,
+   "key": {
+    "color": "#9fb4dc",
+    "power": 0.0,
+    "dir": [
+     0.6,
+     -0.7,
+     0.3
+    ]
+   },
+   "fill": {
+    "color": "#dfe6f0",
+    "power": 0.3
+   },
+   "ambient": {
+    "sky": "#304060",
+    "ground": "#181818",
+    "power": 0.25
+   },
+   "fog": {
+    "color": "#141a26",
+    "density": 0.02
+   },
+   "lut": "lut_night",
+   "bloom": {
+    "threshold": 1.0,
+    "intensity": 0.2
+   },
+   "vignette": 0.25,
+   "characterLight": {
+    "key": "#fff6e8",
+    "keyPower": 1.0,
+    "fill": "#e6ecff",
+    "fillPower": 0.2
+   },
+   "unitLight": {
+    "power": 0,
+    "radius": 2.5,
+    "color": "#ffd9a0"
+   },
+   "localLights": {},
+   "bakeSet": "night",
+   "ibl": 0.4,
+   "characterShadow": 0.9,
+   "characterBrightness": 0.4,
+   "itemBrightness": 2.0,
+   "physical": {
+    "key": {
+     "color": "#9fb4dc",
+     "power": 2.0,
+     "dir": [
+      0.48,
+      -0.73,
+      -0.48
+     ]
+    },
+    "ambient": {
+     "sky": "#3a4c6e",
+     "ground": "#0e1218",
+     "power": 2.66
+    },
+    "fog": {
+     "color": "#15110e",
+     "density": 0.0
+    },
+    "vignette": 0.3,
+    "ao": {
+     "strength": 0.5,
+     "radius": 0.45
+    },
+    "contrast": 1.05,
+    "localLightMul": 3.0,
+    "note": "同营地夜晚；书房台灯、壁灯按 study:night 的 localLights 开"
+   }
   },
   {
    "room": "camp",

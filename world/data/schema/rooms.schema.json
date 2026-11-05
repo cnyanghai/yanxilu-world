@@ -209,6 +209,32 @@
         "type": "string"
        }
       }
+     },
+     "rooms": {
+      "type": "array",
+      "description": "这间房里套着的房间（院子套书房）：id 与在本房坐标里的位置（厘米），引擎合成一块场地、一张寻路网",
+      "items": {
+       "type": "object",
+       "required": [
+        "id",
+        "x",
+        "z"
+       ],
+       "properties": {
+        "id": {
+         "type": "string"
+        },
+        "x": {
+         "type": "integer"
+        },
+        "z": {
+         "type": "integer"
+        },
+        "note": {
+         "type": "string"
+        }
+       }
+      }
      }
     }
    }

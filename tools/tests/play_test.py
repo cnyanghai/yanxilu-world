@@ -54,26 +54,39 @@ async def main():
                 async def walk(x, z, limit=12000):
                     pts = await pg.evaluate(f"window.__play.walkTo({x}, {z})")
                     if not pts: return None, None
-                    t0 = time.time(); await pg.wait_for_function("!window.__play.presence().moving", timeout=limit)
+                    t0 = time.time(); await pg.wait_for_function("!window.__play.presence().moving", timeout=max(limit, 20000))
                     return await pg.evaluate("window.__play.presence()"), (pts, round(time.time() - t0, 1))
 
                 p0 = await pg.evaluate("window.__play.presence()")
-                ok(p0 is not None and not p0["moving"], f"[{label}] 书房开在场：角色站在 {p0 and p0['pos']}")
+                ok(p0 is not None and not p0["moving"], f"[{label}] 书房开在场：角色站在 {p0 and p0['pos']}（场地 {await pg.evaluate('window.__play.site')} 坐标）")
                 await shot("01_spawn")
-                st = await pg.evaluate("(() => { const r = window.__play; return r; })() && " + json.dumps(True))
-                info, meta = await walk(0, -100)   # 书墙站触发格（rooms.study.stations.shelf.trigger）
-                ok(info and abs(info["pos"][0]) <= 2 and abs(info["pos"][1] + 100) <= 2, f"[{label}] 走到书墙站 {info and info['pos']}，用时 {meta and meta[1]} 秒，折点 {meta and len(meta[0])}")
+                S = lambda x, z: pg.evaluate(f"window.__play.at('study', {x}, {z})")   # 书房坐标 → 场地坐标
+                near = lambda info, p, tol=3: info is not None and abs(info["pos"][0] - p[0]) <= tol and abs(info["pos"][1] - p[1]) <= tol
+                p = await S(0, -100); info, meta = await walk(*p)   # 书墙站触发格（rooms.study.stations.shelf.trigger）
+                ok(near(info, p), f"[{label}] 走到书墙站 {info and info['pos']}，用时 {meta and meta[1]} 秒，折点 {meta and len(meta[0])}")
                 await shot("02_shelf")
-                await pg.evaluate("window.__play.walkTo(150, 125)"); await pg.wait_for_timeout(600)
-                info, meta = await walk(-175, 75)  # 途中改道：桌子左前
-                ok(info and abs(info["pos"][0] + 175) <= 2 and abs(info["pos"][1] - 75) <= 2, f"[{label}] 途中改道到桌左前 {info and info['pos']}")
-                info, meta = await walk(205, -150)  # 右墙边远角：右墙应淡出
-                ok(info is not None, f"[{label}] 走到右后角 {info and info['pos']}")
+                q = await S(150, 125); await pg.evaluate(f"window.__play.walkTo({q[0]}, {q[1]})"); await pg.wait_for_timeout(600)
+                p = await S(-175, 75); info, meta = await walk(*p)  # 途中改道：桌子左前
+                ok(near(info, p), f"[{label}] 途中改道到桌左前 {info and info['pos']}")
+                p = await S(205, -150); info, meta = await walk(*p)  # 右墙边远角：右墙应淡出
+                ok(near(info, p), f"[{label}] 走到右后角 {info and info['pos']}")
                 faded = (await pg.evaluate("window.__play.presence()"))["faded"]; await shot("03_corner")
                 notes.append(f"  [{label}] 右后角时淡出的墙：{faded or '无'}")
-                info, meta = await walk(-100, 600)  # 点到房间外：走到最近能站的地方
-                ok(info and info["pos"][1] <= 175, f"[{label}] 点到门外：停在房里最近处 {info and info['pos']}")
-                await pg.evaluate("window.__play.setPeriod('night')"); await pg.wait_for_timeout(600); await shot("04_night")
+                info, meta = await walk(0, 300)    # 出门：院子里石板路上（场地坐标）
+                ok(near(info, [0, 300]), f"[{label}] 出门走到石板路 {info and info['pos']}，用时 {meta and meta[1]} 秒")
+                door_z = (await S(0, 175))[1]
+                cross = [p0[0] + (p1[0] - p0[0]) * (door_z - p0[1]) / (p1[1] - p0[1]) for p0, p1 in zip(meta[0], meta[0][1:]) if (p0[1] - door_z) * (p1[1] - door_z) < 0] if meta else []
+                ok(len(cross) == 1 and abs(cross[0]) <= 45, f"[{label}] 出门的路从门洞过：穿过门那条线 {len(cross)} 次，x = {[round(c) for c in cross]}（门洞 ±45）")
+                await shot("04_yard")
+                info, meta = await walk(-40, -262)  # 绕到屋后长椅边（长椅槽 1 × 1 米在 x -150..-50）
+                ok(near(info, [-40, -262]), f"[{label}] 绕到屋后长椅边 {info and info['pos']}，折点 {meta and len(meta[0])}")
+                notes.append(f"  [{label}] 屋后时淡出的：{(await pg.evaluate('window.__play.presence()'))['faded']}")
+                await shot("05_bench")
+                p = await S(100, -50); info, meta = await walk(*p, limit=20000)   # 走回屋里
+                ok(near(info, p), f"[{label}] 走回屋里 {info and info['pos']}，用时 {meta and meta[1]} 秒")
+                info, meta = await walk(0, 900)    # 点到院墙外：停在院子里最近处
+                ok(info and info["pos"][1] <= 450, f"[{label}] 点到院墙外：停在院里最近处 {info and info['pos']}")
+                await pg.evaluate("window.__play.setPeriod('night')"); await pg.wait_for_timeout(600); await shot("06_night")
                 ok(not errs, f"[{label}] 无控制台报错 {errs[:3]}")
                 await ctx.close()
             await b.close()

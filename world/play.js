@@ -13,9 +13,9 @@ import { loadTables } from "./data/tables.js";
 import { detectTier } from "./render/tiers.js";
 import { Composite } from "./render/post.js";
 import { Fire, flicker } from "./render/fire.js";
-import { buildShell, greyBox } from "./render/shell.js";
+import { buildShell, greyBox, slotBoxes } from "./render/shell.js";
 import { Presence } from "./render/presence.js";
-import { roomGrid } from "./sim/grid.js";
+import { siteOf, siteGrid } from "./sim/site.js";
 
 const Q = new URLSearchParams(location.search);
 const canvas = document.getElementById("gl");
@@ -30,8 +30,10 @@ const camera = new THREE.PerspectiveCamera(9.5, 1.6, 1, 200);
 const T = await loadTables("./");
 if (T.problems.length) console.warn("表校验问题", T.problems);
 const ROOM_ID = Q.get("room") || document.body.dataset.room || "camp";
-const ROOM = T.rooms[ROOM_ID], PRESET = T.presets[ROOM_ID];
-if (!ROOM || !PRESET) throw new Error(`rooms / presets 里没有 ${ROOM_ID}`);
+const ROOM = T.rooms[ROOM_ID]; if (!ROOM) throw new Error(`rooms 里没有 ${ROOM_ID}`);
+/* 场地：这间房若套在别的房间里（书房在院子里），搭整块场地；坐标一律用场地坐标（厘米），OFF 是本房原点在场地里的位置 */
+const { site: SITE, members: MEMBERS, offset: OFF } = siteOf(T.rooms, ROOM_ID);
+const PARTS = [{ room: SITE, off: [0, 0] }, ...MEMBERS.map((m) => ({ room: T.rooms[m.id], off: [m.x, m.z] }))];
 const isMobile = Math.min(innerWidth, innerHeight) < 700 || /Mobi|Android/i.test(navigator.userAgent);
 const TIER = detectTier(renderer, { isMobile });
 renderer.setPixelRatio(Q.has("shot") ? 1 : Math.min(devicePixelRatio || 1, [1, 1.5, 2][TIER]));
@@ -77,7 +79,7 @@ function model(id) {   /* props 表找文件，同一件只加载一次，克隆
   });
 }
 /* 预设里单件模型：props 有 fit 的（Rodin 家具）按 objects 表占地缩放、原点落地、放到 Transform；没有模型的（shell: / procedural: / 未入库）出灰盒 */
-async function placeModel(e) {
+async function placeModel(e, parent = scene, roomId = ROOM_ID) {
   const c = e.components, file = c.Model.file, asset = T.props.assets[file], obj = T.objects[c.Data?.object];
   let o;
   if (asset && /\.(gltf\.json|glb)$/.test(asset.model || "")) {
@@ -90,22 +92,22 @@ async function placeModel(e) {
     } else applyT(o, c.Transform);
   } else if (file === "shell:door") { return null;   /* 门：壳里已开门洞（近墙压低），不出灰盒挡镜头 */
   } else { o = greyBox(c.Data?.object || e.id, obj); applyT(o, c.Transform); }
-  o.name = e.id; scene.add(o); props3d[e.id] = o;
-  for (const [k, L] of Object.entries(c)) if (k.startsWith("Light") && L) { const def = L.fromObject ? obj?.light : L; if (def) addObjLight(o, e.id, def); }
+  o.name = e.id; parent.add(o); props3d[e.id] = o;
+  for (const [k, L] of Object.entries(c)) if (k.startsWith("Light") && L) { const def = L.fromObject ? obj?.light : L; if (def) addObjLight(o, e.id, def, roomId); }
   if (c.Light && !c.Light.fromObject) addLight(o, c.Light);
   return o;
 }
 const props3d = {}, objLights = {};
 /* 物件自带的灯（objects 表 light）：瓦数按 vis 的 physical.lights[实体 id]，亮不亮按 localLights */
-function addObjLight(o, id, def) {
+function addObjLight(o, id, def, roomId) {
   const col = new THREE.Color(def.color), dist = (def.distance || 4);
   const l = def.type === "spot" ? new THREE.SpotLight(col, 0, dist * 2, deg(def.angle || 60) / 2, 0.5, 2) : new THREE.PointLight(col, 0, dist * 2, 2);
   const b = new THREE.Box3().setFromObject(o); l.position.set(0, (b.max.y - b.min.y) * 0.9 / Math.max(o.scale.y, 1e-6), 0);
   if (l.isSpotLight) { l.target.position.set(0, -1, 0.15); o.add(l.target); l.castShadow = !!def.shadow && TIER >= 2; l.shadow.mapSize.setScalar(512); }
-  o.add(l); objLights[id] = l;
+  o.add(l); l.userData.room = roomId; objLights[id] = l;
 }
 
-async function placePrefab(e) {
+async function placePrefab(e, parent = scene) {
   const pf = await getJSON("./" + e.components.Prefab.file), root = new THREE.Group(); applyT(root, e.components.Transform); root.name = e.id;
   await Promise.all(pf.entities.map(async (pe) => {
     const c = pe.components, o = c.Model ? (await model(c.Model.file)).clone() : new THREE.Group();
@@ -116,7 +118,7 @@ async function placePrefab(e) {
     if (!c.Interact && !c.Light) o.userData.static = true;
   }));
   mergeStatic(root);
-  scene.add(root);
+  parent.add(root);
 }
 /* 静态件按材质合并（手机档优化）：偏屋 30 来个件、每件两三种材质，原来一件一种材质一个 draw call；同名材质（同一套贴图）的几何烘上变换后合成一个网格。
    门（交互）、灯笼（带灯）不合并。合并后同名材质只留一份，贴图也只上传一次。 */
@@ -183,8 +185,9 @@ async function scatter(e) {
 /* ---------- 时段：vis 的 camp:day / camp:night（物理单位，见 vis.mapping_camp） ---------- */
 let period = Q.get("period") || "day";
 function setPeriod(pd) {
-  period = pd; const v0 = T.visFor(ROOM_ID, pd), v = v0.units === "physical" ? v0 : { ...v0, ...(v0.physical || {}) }, d = new THREE.Vector3().fromArray(v.key.dir).normalize();
-  for (const [id, l] of Object.entries(objLights)) l.intensity = (v.localLights?.[id] ? (v.lights?.[id] ?? 30) * v.localLights[id] : 0) / (4 * Math.PI) * (v.localLightMul ?? 1);
+  const phys = (id) => { const v0 = T.visFor(id, pd); return v0.units === "physical" ? v0 : { ...v0, ...(v0.physical || {}) }; };
+  period = pd; const v = phys(SITE.id), d = new THREE.Vector3().fromArray(v.key.dir).normalize();   /* 整块场地用最外层房间的光；屋里的灯按各自房间的 localLights 开 */
+  for (const [id, l] of Object.entries(objLights)) { const r = phys(l.userData.room); l.intensity = (r.localLights?.[id] ? (r.lights?.[id] ?? 30) * r.localLights[id] : 0) / (4 * Math.PI) * (v.localLightMul ?? 1); }
   sun.color.set(v.key.color); sun.intensity = v.key.power; sun.position.copy(d).multiplyScalar(-25); sun.target.position.set(0, 0, 0);
   hemi.color.set(v.ambient.sky); hemi.groundColor.set(v.ambient.ground); hemi.intensity = v.ambient.power * Math.PI;
   const mul = v.localLightMul ?? 1;
@@ -210,23 +213,34 @@ function setShot(k) {
 
 /* ---------- 搭场景 ---------- */
 const t0 = performance.now(); let ready = false;
-await Promise.all(PRESET.entities.map((e) => {
-  const c = e.components;
-  if (c.Prefab) return placePrefab(e);
-  if (c.Model && c.Data) return placeModel(e);
-  if (c.Vfx) return getJSON("./" + c.Vfx.file).then((def) => { const f = new Fire(def); applyT(f.group, c.Transform); scene.add(f.group); fires.push(f); });
-  if (c.Model) return model(c.Model.file).then((m) => { const o = m.clone(); applyT(o, c.Transform); o.name = e.id; scene.add(o); if (c.Light) addLight(o, c.Light); });
-  if (c.Ground) return ground(e);
-  if (c.Scatter) return scatter(e);
-  if (c.Light) { const g = new THREE.Group(); applyT(g, c.Transform); scene.add(g); addLight(g, c.Light); }
-  return null;
+/* 每间房一个挂点（场地坐标的原点平移），预设里的实体挂在各自房间下；没有预设的房间（院子）固定槽出灰盒 */
+await Promise.all(PARTS.flatMap(({ room, off }) => {
+  const parent = new THREE.Group(); parent.position.set(off[0] / 100, 0, off[1] / 100); parent.name = "room:" + room.id; scene.add(parent);
+  const preset = T.presets[room.id];
+  if (!preset) { parent.add(slotBoxes(room, T.objects)); return []; }
+  return preset.entities.map((e) => {
+    const c = e.components;
+    if (c.Prefab) return placePrefab(e, parent);
+    if (c.Model && c.Data) return placeModel(e, parent, room.id);
+    if (c.Vfx) return getJSON("./" + c.Vfx.file).then((def) => { const f = new Fire(def); applyT(f.group, c.Transform); parent.add(f.group); fires.push(f); });
+    if (c.Model) return model(c.Model.file).then((m) => { const o = m.clone(); applyT(o, c.Transform); o.name = e.id; parent.add(o); if (c.Light) addLight(o, c.Light); });
+    if (c.Ground) return ground(e);
+    if (c.Scatter) return scatter(e);
+    if (c.Light) { const g = new THREE.Group(); applyT(g, c.Transform); parent.add(g); addLight(g, c.Light); }
+    return null;
+  });
 }));
-/* 壳（有瓦片墙的房间）与在场（有 follow 的房间） */
-let shell = null, presence = null;
-if (ROOM.tiles?.walls?.some((w) => T.tiles.wall[w.type]?.segment !== "none")) { shell = buildShell(ROOM, T.tiles); scene.add(shell.group); }
+/* 壳（有瓦片墙的房间；场地的地板跳过套在里面的房间）与在场（有 follow 的房间） */
+let presence = null; const shells = [];
+const hasWalls = (r) => r.tiles?.walls?.some((w) => T.tiles.wall[w.type]?.segment !== "none");
+const memberRects = PARTS.slice(1).map(({ room, off }) => ({ x0: off[0] - room.size.w / 2, x1: off[0] + room.size.w / 2, z0: off[1] - room.size.d / 2, z1: off[1] + room.size.d / 2 }));
+for (const [i, { room, off }] of PARTS.entries()) if (hasWalls(room)) { const sh = buildShell(room, T.tiles, { offset: off, skip: i === 0 ? memberRects : [] }); scene.add(sh.group); shells.push(sh); }
 if (ROOM.follow && !Q.get("shot")) {
-  const grid = roomGrid(ROOM, T.objects), door = ROOM.door ? [ROOM.door.x, ROOM.size.d / 2 - 35] : [0, 0];
-  presence = new Presence({ scene, camera, dom: canvas, grid, room: ROOM, walls: shell?.walls || [], spawn: ROOM.walk?.spawn || door });
+  const grid = siteGrid(SITE, MEMBERS, T.rooms, T.objects, shells.flatMap((s) => s.blocks));
+  const door = ROOM.door ? [ROOM.door.x + OFF[0], ROOM.size.d / 2 - 35 + OFF[1]] : [OFF[0], OFF[1]];
+  /* 会挡住人的：墙段 + 高过 1.5 米的家具与树（书墙 2.6 米，人走到屋后会被整个挡住） */
+  const tall = []; scene.traverse((o) => { if (!o.userData.objectId) return; const b = new THREE.Box3().setFromObject(o); if (b.max.y - b.min.y >= 1.5) o.traverse((m) => { if (m.isMesh) { m.userData.side = o.userData.objectId; m.userData.fadeKey = o.uuid; tall.push(m); } }); });
+  presence = new Presence({ scene, camera, dom: canvas, grid, room: ROOM, walls: [...shells.flatMap((s) => s.walls), ...tall], spawn: ROOM.walk?.spawn && ROOM === SITE ? ROOM.walk.spawn : door });
 }
 setPeriod(period);
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; if (shot && !presence?.enabled) setShot(shot); else camera.updateProjectionMatrix(); }
@@ -264,7 +278,9 @@ function path(points) {
 }
 /* 回到跟随（离开对焦机位） */
 function follow() { if (presence) { presence.enabled = true; presence.snap = true; shot = null; } }
-window.__play = window.__camp = { ready: () => ready, room: ROOM_ID, setPeriod, setShot, setState, figure, path, follow,
+/* 本房坐标 → 场地坐标（厘米） */
+function at(roomId, x, z) { const p = PARTS.find((q) => q.room.id === roomId) || PARTS[0]; return [x + p.off[0], z + p.off[1]]; }
+window.__play = window.__camp = { ready: () => ready, room: ROOM_ID, site: SITE.id, at, setPeriod, setShot, setState, figure, path, follow,
   walkTo: (x, z) => presence?.walkTo(x, z), presence: () => presence?.info() || null,
   info: () => ({ ...renderer.info.render, tier: TIER, gpu: gpu(), texLo: TEX_LO, bytes: bytes(), files: performance.getEntriesByType("resource").length }), scene, renderer, camera };
 frame();
