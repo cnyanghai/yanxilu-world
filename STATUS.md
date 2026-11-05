@@ -3,7 +3,7 @@ type: status
 status: active
 cluster: product
 stage: M1 进行中；排练完成，PIPELINE 1.0 草案已并入抖音水上村落的四条规矩；当前交付物是宋代营地一周小试（偏屋组件 + 篝火 + 地面）
-next: 在 Blender 窗口里接着建其余组件（柱、梁、平墙、窗洞墙、山花、柴门，再茅草屋面与屋脊）并拼成偏屋 → 篝火一件走图生三维 → Rodin / Tripo A/B 一件 → 导入拼偏屋 → 夜晚光与截图打分（量 M1 画质门）
+next: 偏屋导出进 /world（院子，vis 夜晚 + 环境遮蔽 + 三盏实时光）→ 茅草加层片做体积、平墙加变体 → 篝火一件走图生三维 → Rodin / Tripo A/B 一件 → 导入拼偏屋 → 夜晚光与截图打分（量 M1 画质门）
 blocked_by: 无（服务器新克隆的每 5 分钟 git pull 由用户照书架那条加）
 updated: 2026-11-04
 ---
@@ -70,6 +70,7 @@ updated: 2026-11-04
 
 ## 日志
 
+- 2026-11-04 Blender 窗口里建齐偏屋：tools/blender/song_kit/ 下 prep_textures.py（三视图拆单视图、按真尺寸拉伸，窗内口目测量后对到 0.8 × 0.6 下沿 1.0）、kitlib.py（9 种组件网格：柱、梁、平墙、门洞墙与窗洞墙带凸出木框、直棂 7 根、柴门原点在门轴、山花三角、茅草屋面片檐口锯齿散草、半椭圆屋脊）、lineup.py（一字排开）、shed.py（6 柱 6 墙 6 梁 2 山花 4 屋面 2 屋脊 1 门 + 1.5 米量杆 + 土地面，共用网格，屋面与屋脊放宽 2% 盖接缝）；存 C:\\Users\\cnyan\\blender_mcp\\song_shed.blend，截图 tools/out/song_kit/shots/。自评（材质预览光，非游戏光）约 2.5：形与尺寸对、人能进门；缺环境遮蔽与真实光、茅草是平板贴图没有体积、四面平墙同一张图重复、门扇在屋内看不见、地面贴图偏浅
 - 2026-11-04 装 blender-mcp：审阅插件（只听本机、遥测默认关）→ 装进 Windows 侧 Blender 4.5 并自动起 9876 服务，WSL 镜像网络直连通过 → 本项目登记 MCP（local，关遥测；重开会话后才有工具）→ 窗口里建门洞墙：几何按尺寸写死（门洞 0.9 × 1.95），三视图正面按洞口分段拉伸后投成贴图，1.5 米量杆站进门洞头顶余 0.45 米；脚本 tools/blender/song_kit/wall_door.py、直连工具 tools/blender/mcp_call.py；技术卡十三。组件做法改为：7 件墙柱梁门 Blender 建、茅草两件 Blender 厚板加插片、篝火一件图生三维
 - 2026-11-04 门洞墙与窗洞墙用 wall_plain 作参考重出（0.75 元）：材质统一；门洞仍约 0.64 × 1.79 米，定为生模后 Blender 洞口校正；查到 fal 上 Tripo v2.5 多视图接口（front / left / right / back 四张图、texture 档、quad、pbr）
 - 2026-11-04 营地小试出图：gpt-image-2 中档 13 张（4.9 元）存 concepts/song_kit/；组件 8 件可用，门洞墙与窗洞墙被参考图带偏成夯土瓦顶院墙、门洞偏小，要换 wall_plain 作参考重出 2 张（约 0.75 元，等用户点头）；地面三张做成无缝平铺；记 ASSET-SPEC 10.4
