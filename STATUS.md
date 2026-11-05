@@ -5,7 +5,7 @@ cluster: product
 stage: 2026-11-02 从 yanxilu 拆出成独立项目（版本 2 游戏）；排练四阶段完成，生产流程 1.0 草案在 design/studio/PIPELINE.md，第九张表 characters 已登记
 next: 用自己的第一批资产（一件家具 + 一个预制体 + 读书人角色）按 design/studio/PIPELINE.md 走一遍，走通后删 tools/out/d2r_local 并把 PIPELINE 去掉"草案"；M1 剩余（tiles 渲染按层 + 印章 + 贴花改、4.5 × 3.5 重烘、真显卡截图、摆放编辑器）并入
 blocked_by: 无（服务器新克隆的每 5 分钟 git pull 由用户照书架那条加）
-updated: 2026-11-03
+updated: 2026-11-04
 ---
 
 # 状态
@@ -67,6 +67,7 @@ updated: 2026-11-03
 
 ## 日志
 
+- 2026-11-04 用户给两条抖音（Astra 一夜做游戏、Tripo P2.0 + Opus 5.5 在 Godot 拼水上村落）：取视频抽帧看完，落 REFERENCES；结论是画质先靠光与地面层，资产走模块化套件 + 尺寸脚本 + 禁项提示词 + 人形实测，图集与"每件独立贴图"相冲待定
 - 2026-11-03 Baba：/opt/yanxilu-world 克隆 + /opt/yanxilu/world 链接完成，线上 /world 恢复（页面 / three.module.js / world.js / vis.json 均 200）；拆分全部收口
 - 2026-11-03 用户在网页建了 cnyanghai/yanxilu-world（公开）并推送，远端与本地一致（2b33157）；剩 Baba 一步
 - 2026-11-02 拆分后续：baba_mock 在没有书架首页与嵌入脚本时也能起（游戏仓库单独跑测试）；REFERENCES 的 frontmatter 改为本项目名；发现 world/ 用 ../vendor 引 three.js 与字体，拆分后线上会找不到，vendor/three 与 vendor/fonts 已挪进 world/vendor/，world/index.html、world.js、room/index.html 改为相对 world/ 的路径，回归通过；线上只需书架克隆里一个 world 链接；GitHub 建仓与推送、Baba 的 /world 链接仍留给用户
