@@ -99,3 +99,12 @@
 - 在哪能看见：排练的场景页（只在本机，位置见 studio/REHEARSAL.md 护栏第一条）；`world/data/vis.json` 的 `mapping` 字段与四个新列（ibl、characterShadow、characterBrightness、itemBrightness）。
 - 换个做法会怎样：保留线性乘子，每个时段手调一遍曝光，能调出来但表里的数字就失去物理意义，加新时段又要重调。
 - 想深究看什么：Filmic / ACES 曲线的低值段斜率；three.js 的 `environmentIntensity` 与 `HemisphereLight` 的叠加；WebGL2 多重采样深度纹理的解析（`WebGLRenderTarget.samples` 与 `depthTexture`）。
+
+## 十三、AI 实时操作 Blender 窗口（blender-mcp，2026-11-04）
+
+- 是什么：Blender 里装一个插件，开一个只听本机的 9876 端口；Claude 把 Python 命令发过去，模型在视口里当场长出来，还能取视口截图自己检查。插件 ahujasid/blender-mcp（MIT），遥测默认关，我们登记时也加了 DISABLE_TELEMETRY。
+- 为什么用：建筑组件（墙、柱、梁、门）形状简单、尺寸要严，Blender 按尺寸表建比图生三维准，门洞写 0.9 × 1.95 就是 0.9 × 1.95；开窗口建，用户能边看边指出问题，也能自己上手改。
+- 在哪能看见：Windows 上的 Blender 4.5 窗口（`/mnt/d/齐河OnLine/tools/blender/blender.exe --python C:\Users\cnyan\blender_mcp\start_mcp.py` 打开即自动起服务）；会话里是 blender 这组工具（重开会话后可用），没有时用 `tools/blender/mcp_call.py` 直连端口。
+- 换个做法会怎样：后台脚本（bake.sh）一样能建，但用户看不到过程；图生三维（Rodin / Tripo）省时间，尺寸与洞口给不准。
+- 规矩：窗口里定下来的每一件，都落成 `tools/blender/song_kit/<件>.py` 脚本，以后改尺寸、批量重出走后台。
+- 贴图做法：三视图是正交的，正面那张直接投到正面；先把图里的洞口按真尺寸分段拉伸（门洞内圈对准 0.9 × 1.95），再贴。
