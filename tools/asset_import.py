@@ -127,9 +127,19 @@ def import_components(src, pack, tex_dir):
             bc = m.get("pbrMetallicRoughness", {}).get("baseColorTexture")
             if bc and tex_of.get(bc["index"]) in alpha_imgs:
                 m["alphaMode"] = "MASK"; m["alphaCutoff"] = 0.5; m["doubleSided"] = True
+        def all_white(acc_i):
+            a = g["accessors"][acc_i]; bv = g["bufferViews"][a["bufferView"]]; n = {"VEC3": 3, "VEC4": 4}[a["type"]]
+            size = {5121: 1, 5123: 2, 5126: 4}[a["componentType"]]; fmt = {5121: "B", 5123: "H", 5126: "f"}[a["componentType"]]
+            top = {5121: 255, 5123: 65535, 5126: 1.0}[a["componentType"]]; off = bv.get("byteOffset", 0) + a.get("byteOffset", 0)
+            vals = struct.unpack_from(f"<{a['count'] * n}{fmt}", buf, off)
+            return all(v >= top * 0.999 for v in vals)
         for mesh in g.get("meshes", []):
             for pr in mesh["primitives"]:
-                pr["attributes"].pop("COLOR_1", None)
+                at = pr["attributes"]
+                if "COLOR_1" in at:   # 导出器在没有活动颜色属性时先写一组全白的 COLOR_0，真数据在 COLOR_1
+                    if "COLOR_0" in at and all_white(at["COLOR_0"]):
+                        at["COLOR_0"] = at["COLOR_1"]; print(f"[提示] {cid}：COLOR_0 全白，改用 COLOR_1（Blender 端用 kitlib._active_col 设活动颜色属性）")
+                    at.pop("COLOR_1")
         lo, hi = bbox(g, buf)
         dest = base / kind / cid; dest.mkdir(parents=True, exist_ok=True)
         write_gltf_json(dest / f"{cid}.gltf.json", g, buf)

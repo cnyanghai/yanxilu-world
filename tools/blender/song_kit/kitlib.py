@@ -30,9 +30,9 @@ def _img(f, data=False):
     return im
 
 
-def mat(img, rough=0.85, nstr=1.0, alpha=False, vcol=False):
-    """vcol：底色乘顶点色 Col（旧化；导出 glTF 为 COLOR_0，three.js 开 vertexColors）。"""
-    name = "m_" + img.split(".")[0]
+def mat(img, rough=0.85, nstr=1.0, alpha=False, vcol=False, name=None):
+    """vcol：底色乘顶点色 Col（旧化；导出 glTF 为 COLOR_0，three.js 开 vertexColors）。name：同一张图要两种材质时另起名。"""
+    name = name or "m_" + img.split(".")[0]
     m = bpy.data.materials.get(name)
     if m:
         return m
@@ -97,6 +97,13 @@ def obj(name, me, c, loc=(0, 0, 0), rot=(0, 0, 0), bevel=0.008):
         b = o.modifiers.new("bevel", "BEVEL"); b.width = bevel; b.segments = 2; b.harden_normals = True
         b.limit_method = "ANGLE"
     return o
+
+
+def _active_col(me):
+    """把顶点色 Col 设成活动与渲染用的颜色属性：不设的话 glTF 导出器会先写一组全白的 COLOR_0，真数据落到 COLOR_1（2026-11-05 踩过）。"""
+    i = me.color_attributes.find("Col")
+    if i >= 0:
+        me.color_attributes.active_color_index = i; me.color_attributes.render_color_index = i
 
 
 def _quad(bm, uv, vs, uvs, slot, out=None):
@@ -315,7 +322,7 @@ def m_roof_thatch(kind="mid"):
             v = (1.04 - 0.2 * t) * (0.92 + 0.1 * n)
             l[col] = (v, v * 0.98, v * 0.95, 1.0)
     bm.normal_update()
-    me = bpy.data.meshes.new("roof_" + kind); bm.to_mesh(me); bm.free()
+    me = bpy.data.meshes.new("roof_" + kind); bm.to_mesh(me); bm.free(); _active_col(me)
     for img in ("roof_thatch_f.jpg", "thatch_end.jpg", "roof_thatch_b.jpg", "roof_thatch_s.jpg"):
         me.materials.append(mat(img, 0.95, vcol=True))
     me.materials.append(mat("thatch_fringe.png", 0.95, 0, alpha=True, vcol=True))
@@ -348,12 +355,89 @@ def m_ridge(kind="mid"):
     return me
 
 
+# ---------- 篝火（ASSET-SPEC 10.1 第 10 件；2026-11-05 改为 Blender 程序建，原计划图生三维） ----------
+def m_campfire():
+    """直径约 1.0 米、高 0.35 米，原点底面中心。12 块拳头大的河卵石围一圈（内侧与顶上熏黑）、7 根劈柴搭成尖顶（上端烧焦）、
+    一层灰烬（中间炭黑、外圈灰白）、6 块炭（夜里发红，材质名含 ember，引擎按时段点亮）。全部明暗走顶点色 Col。
+    材质槽：0 石（rock）、1 柴（firewood 浅色木茬，树皮面靠顶点色压暗）、2 灰（rock）、3 炭火（m_ember，无贴图、自发光）。"""
+    import random
+    rnd = random.Random(11)
+    bm = bmesh.new(); uv = bm.loops.layers.uv.new("UVMap"); col = bm.loops.layers.float_color.new("Col")
+    sm = lambda e0, e1, x: (lambda t: t * t * (3 - 2 * t))(min(max((x - e0) / (e1 - e0), 0.0), 1.0))
+
+    def blob(center, radii, seed, slot, sub, shade):
+        r = bmesh.ops.create_icosphere(bm, subdivisions=sub, radius=1.0); vs = r["verts"]
+        off = Vector((seed * 3.1, seed * 1.7, seed * 2.3))
+        for v in vs:
+            d = v.co.normalized(); n = 0.16 * _noise.noise(d * 1.2 + off) + 0.05 * _noise.noise(d * 2.8 + off)
+            v.co = center + Vector((d.x * radii[0], d.y * radii[1], d.z * radii[2])) * (1 + n)
+        for f in {f for v in vs for f in v.link_faces}:
+            f.material_index = slot; f.smooth = True
+            for l in f.loops:
+                p = l.vert.co; l[uv].uv = (p.x * 2.5 + 0.5 + seed * 0.13, p.y * 2.5 + 0.5 + p.z * 1.5)
+                c = shade(p); l[col] = (c, c * 0.98, c * 0.95, 1.0)
+
+    # 石圈：外缘半径约 0.51 米
+    for i in range(12):
+        a = 2 * math.pi * i / 12 + rnd.uniform(-0.08, 0.08); rr = 0.42 + rnd.uniform(-0.02, 0.02)
+        k = rnd.uniform(0.75, 1.25); rx, ry, rz = 0.085 * k, rnd.uniform(0.06, 0.08) * k, rnd.uniform(0.045, 0.065) * k
+        ctr = Vector((rr * math.cos(a), rr * math.sin(a), rz * 0.55)); base = rnd.uniform(0.62, 0.85)
+        def soot(p, base=base):
+            inner = sm(0.48, 0.38, math.hypot(p.x, p.y)); top = sm(0.02, 0.09, p.z)
+            return base * (1.0 - 0.85 * inner * (0.35 + 0.65 * top))
+        blob(ctr, (rx, ry, rz), i + 1, 0, 2, soot)
+    # 劈柴：底端在半径约 0.24 的圈上，顶端靠拢到中心，高 0.33 到 0.36；截面五边形，宽约 8 厘米
+    for i in range(7):
+        a = 2 * math.pi * i / 7 + rnd.uniform(-0.12, 0.12)
+        B = Vector((0.24 * math.cos(a), 0.24 * math.sin(a), 0.02)); Tp = Vector((0.04 * math.cos(a + 0.3), 0.04 * math.sin(a + 0.3), rnd.uniform(0.29, 0.32)))
+        ax = (Tp - B).normalized(); side = ax.cross(Vector((0, 0, 1))).normalized(); upv = side.cross(ax).normalized()
+        prof = [(0.042, 0.0), (0.012, 0.038), (-0.036, 0.022), (-0.036, -0.022), (0.012, -0.038)]
+        rot = rnd.uniform(0, 2 * math.pi)
+        ring = lambda P: [bm.verts.new(P + side * (x * math.cos(rot) - y * math.sin(rot)) + upv * (x * math.sin(rot) + y * math.cos(rot))) for x, y in prof]
+        rb, rt = ring(B), ring(Tp); L = (Tp - B).length; v0 = rnd.uniform(0, 1.6)
+        char = lambda t: 1.0 - 0.88 * sm(0.5, 0.92, t) - 0.3 * (1 - sm(0.0, 0.12, t))
+        for k in range(5):   # 第 0、4 面是劈开的木茬（浅），其余三面当树皮（压暗）
+            j = (k + 1) % 5; f = bm.faces.new([rb[k], rb[j], rt[j], rt[k]]); f.material_index = 1; bark = 1.0 if k in (0, 4) else 0.42
+            for l, (u, t) in zip(f.loops, [(k / 5, 0), ((k + 1) / 5, 0), ((k + 1) / 5, 1), (k / 5, 1)]):
+                l[uv].uv = (u * 0.3 + i * 0.13, (v0 + t * L) / 1.0); c = char(t) * bark; l[col] = (c, c * 0.95, c * 0.9, 1.0)
+        for rg, t in ((rb, 0.0), (list(reversed(rt)), 1.0)):
+            f = bm.faces.new(list(reversed(rg)) if t == 0 else rg); f.material_index = 1
+            for l in f.loops:
+                l[uv].uv = (0.5 + i * 0.1, v0); c = char(t) * 0.75; l[col] = (c, c * 0.95, c * 0.9, 1.0)
+    # 灰烬：中心微隆、外缘贴地，半径 0.36
+    rings = [(0.0, 0.035), (0.14, 0.028), (0.26, 0.015), (0.36, 0.002)]
+    shadeA = lambda r: 0.28 + 0.67 * sm(0.05, 0.34, r)
+    wob = [1 + 0.16 * _noise.noise(Vector((1.7 * math.cos(2 * math.pi * k / 16), 1.7 * math.sin(2 * math.pi * k / 16), 4.2))) for k in range(16)]   # 外缘不成正圆
+    vs = [[bm.verts.new((r * wob[k] ** (r / 0.36) * math.cos(2 * math.pi * k / 16), r * wob[k] ** (r / 0.36) * math.sin(2 * math.pi * k / 16), z)) for k in range(16)] if r else [bm.verts.new((0, 0, z))] for r, z in rings]
+    for ri in range(len(rings) - 1):
+        for k in range(16):
+            j = (k + 1) % 16
+            quad = [vs[ri][0], vs[ri + 1][k], vs[ri + 1][j]] if ri == 0 else [vs[ri][k], vs[ri + 1][k], vs[ri + 1][j], vs[ri][j]]
+            f = bm.faces.new(quad); f.material_index = 2
+            for l in f.loops:
+                p = l.vert.co; l[uv].uv = (p.x * 1.6 + 0.3, p.y * 1.6 + 0.7); c = shadeA(math.hypot(p.x, p.y)); l[col] = (c, c, c * 0.97, 1.0)
+    # 炭火：6 块，压在柴根之间
+    for i in range(6):
+        a = rnd.uniform(0, 2 * math.pi); rr = rnd.uniform(0.03, 0.17); s = rnd.uniform(0.025, 0.045)
+        blob(Vector((rr * math.cos(a), rr * math.sin(a), 0.035)), (s, s * 0.85, s * 0.6), 40 + i, 3, 0, lambda p: 1.0)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.normal_update()
+    me = bpy.data.meshes.new("campfire"); bm.to_mesh(me); bm.free(); _active_col(me)
+    em = bpy.data.materials.get("m_ember") or bpy.data.materials.new("m_ember"); em.use_nodes = True
+    b = em.node_tree.nodes["Principled BSDF"]; b.inputs["Base Color"].default_value = (0.035, 0.03, 0.025, 1); b.inputs["Roughness"].default_value = 0.9
+    b.inputs["Emission Color"].default_value = (1.0, 0.42, 0.12, 1)
+    for m in (mat("rock.jpg", 0.8, vcol=True, name="m_rock_soot"), mat("firewood.jpg", 0.85, vcol=True, name="m_firewood"),
+              mat("rock.jpg", 0.95, vcol=True, name="m_ash"), em):
+        me.materials.append(m)
+    return me
+
+
 BUILD = {"post": m_post, "beam": m_beam, "wall_plain": m_wall_plain,
          "wall_plain_mir": lambda: m_wall_plain("mir"), "wall_plain_full": lambda: m_wall_plain("full"),
          "wall_door": m_wall_door, "wall_window": m_wall_window, "door_leaf": m_door_leaf, "gable": m_gable,
          "roof_thatch": lambda: m_roof_thatch("mid"), "roof_verge_l": lambda: m_roof_thatch("verge_l"),
          "roof_verge_r": lambda: m_roof_thatch("verge_r"),
-         "ridge": m_ridge, "ridge_end_l": lambda: m_ridge("end_l"), "ridge_end_r": lambda: m_ridge("end_r")}
+         "ridge": m_ridge, "ridge_end_l": lambda: m_ridge("end_l"), "ridge_end_r": lambda: m_ridge("end_r"),
+         "campfire": m_campfire}
 
 
 def build_all():

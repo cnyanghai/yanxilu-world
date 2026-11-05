@@ -11,7 +11,7 @@ const Q = new URLSearchParams(location.search);
 const canvas = document.getElementById("gl");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: true });
 renderer.setPixelRatio(Q.has("shot") ? 1 : Math.min(devicePixelRatio || 1, 2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;   /* 0.186 起 PCFSoft 已去掉，回退到这个 */
 renderer.toneMapping = THREE.AgXToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
 const EXPOSURE = 0.33;                                   /* 全时段恒定（vis.mapping_camp）；Blender 白天是 -1.15 档（0.45），three 的天光无遮挡、AgX 实现也不同，真显卡量过后压到 0.33 */
 renderer.toneMappingExposure = EXPOSURE; renderer.info.autoReset = false;   /* draw call 按整帧累计（场景 + 阴影 + 合成） */
@@ -49,7 +49,9 @@ function model(id) {   /* props 表找文件，同一件只加载一次，克隆
   const a = T.props.assets[id]; if (!a) return Promise.reject(new Error("props 里没有 " + id));
   return models[id] ||= gltf.loadAsync("./" + a.model).then((g) => {
     g.scene.traverse((o) => { if (!o.isMesh) return; o.castShadow = true; o.receiveShadow = true;
-      const m = o.material; if (m.map) m.map.anisotropy = 8; if (/lantern/.test(m.name)) { m.emissive = new THREE.Color("#ffc890"); glowMats.push(m); } });
+      const m = o.material; if (m.map) m.map.anisotropy = 8;
+      const g = /lantern/.test(m.name) ? ["#ffc890", 12] : /ember/.test(m.name) ? ["#ff6a1f", 5] : null;   /* 灯笼纸、篝火的炭：夜里自发光（同 Blender 看光） */
+      if (g && !glowMats.includes(m)) { m.emissive = new THREE.Color(g[0]); m.userData.glow = g[1]; glowMats.push(m); } });
     return g.scene;
   });
 }
@@ -114,7 +116,7 @@ function setPeriod(pd) {
   hemi.color.set(v.ambient.sky); hemi.groundColor.set(v.ambient.ground); hemi.intensity = v.ambient.power * Math.PI;
   const mul = v.localLightMul ?? 1;
   for (const l of locals) l.intensity = l.userData.periods.includes(pd) ? l.userData.power / (4 * Math.PI) * mul : 0;
-  for (const m of glowMats) m.emissiveIntensity = pd === "night" || pd === "dusk" ? 12 * mul : 0;
+  for (const m of glowMats) m.emissiveIntensity = pd === "night" || pd === "dusk" ? m.userData.glow * mul : 0;
   scene.background = new THREE.Color(v.fog.color);
   if (composite) composite.setVis({ fogColor: v.fog.color, fogDensity: v.fog.density, fogStart: 30, vignette: v.vignette ?? 0.25, grade: [1, 1, 1], ao: v.ao, contrast: v.contrast ?? 1 });
   document.body.dataset.period = pd;
@@ -133,6 +135,7 @@ const t0 = performance.now(); let ready = false;
 await Promise.all(PRESET.entities.map((e) => {
   const c = e.components;
   if (c.Prefab) return placePrefab(e);
+  if (c.Model) return model(c.Model.file).then((m) => { const o = m.clone(); applyT(o, c.Transform); o.name = e.id; scene.add(o); if (c.Light) addLight(o, c.Light); });
   if (c.Ground) return ground(e);
   if (c.Scatter) return scatter(e);
   if (c.Light) { const g = new THREE.Group(); applyT(g, c.Transform); scene.add(g); addLight(g, c.Light); }

@@ -716,7 +716,18 @@
      "dist": 350,
      "fov": 25.4
     },
-    "note": "照 Blender 看光（tools/blender/song_kit/light.py）的三个机位换算：135 / 85 / 50 毫米，画面 16:10 时的竖向视场角"
+    "note": "照 Blender 看光（tools/blender/song_kit/light.py）的三个机位换算：135 / 85 / 50 毫米，画面 16:10 时的竖向视场角",
+    "fire": {
+     "target": [
+      290,
+      18,
+      -340
+     ],
+     "az": -150,
+     "el": 32,
+     "dist": 420,
+     "fov": 24
+    }
    },
    "preset": "camp",
    "tiles": {

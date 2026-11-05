@@ -13,7 +13,7 @@ OUT = os.path.join(ROOT, "tools", "out", "camp"); os.makedirs(OUT, exist_ok=True
 PORT = int(sys.argv[sys.argv.index("--port") + 1]) if "--port" in sys.argv else 8792
 CDP = 9333
 CHROME = "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe"
-SHOTS = [(p, s) for p in ("day", "night") for s in ("wide", "close", "detail")]
+SHOTS = [(p, s) for p in ("day", "night") for s in ("wide", "close", "detail", "fire")]
 
 
 def up(url, n=60):
@@ -49,10 +49,12 @@ async def main():
             pg.on("console", lambda m: errs.append(m.text) if m.type == "error" else None)
             pg.on("pageerror", lambda e: errs.append(str(e)))
             rows = []
+            # 只加载一次页面，切时段与机位走 window.__camp（每张都重载会累积显存，2026-11-05 第 7 张起上下文丢失、页面崩）
+            await pg.goto(f"http://127.0.0.1:{PORT}/world/camp.html?shot=wide&period=day&clean=1" + ("&sw=1" if sw else ""))
+            await pg.wait_for_function("window.__camp && window.__camp.ready()", timeout=120000)
             for period, shot in SHOTS:
                 t = time.time()
-                await pg.goto(f"http://127.0.0.1:{PORT}/world/camp.html?shot={shot}&period={period}&clean=1" + ("&sw=1" if sw else ""))
-                await pg.wait_for_function("window.__camp && window.__camp.ready()", timeout=120000); await pg.wait_for_timeout(600)
+                await pg.evaluate(f"window.__camp.setPeriod('{period}'); window.__camp.setShot('{shot}')"); await pg.wait_for_timeout(900)
                 fn = os.path.join(OUT, f"{period}_{shot}.png"); await pg.screenshot(path=fn)
                 info = await pg.evaluate("window.__camp.info()")
                 st = stats(np.asarray(Image.open(fn).convert("RGB")).astype(np.float32))

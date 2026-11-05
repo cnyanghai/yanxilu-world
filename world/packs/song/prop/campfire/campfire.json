@@ -1,0 +1,44 @@
+{
+ "format": 1,
+ "units": "cm",
+ "id": "campfire",
+ "kind": "prop",
+ "pack": "song",
+ "components": {
+  "Model": {
+   "file": "campfire.gltf.json",
+   "tris": 1272,
+   "textures": [
+    "firewood.jpg",
+    "firewood_n.jpg",
+    "rock.jpg",
+    "rock_n.jpg"
+   ],
+   "origin": "authored"
+  },
+  "Footprint": {
+   "w": 106,
+   "d": 95,
+   "h": 38
+  }
+ },
+ "import": {
+  "source": "/mnt/c/Users/cnyan/blender_mcp/export/campfire.gltf",
+  "tris": {
+   "after": 1272,
+   "budget": 1500
+  },
+  "bbox_m": [
+   [
+    -0.539,
+    -0.035,
+    -0.478
+   ],
+   [
+    0.521,
+    0.343,
+    0.471
+   ]
+  ]
+ }
+}

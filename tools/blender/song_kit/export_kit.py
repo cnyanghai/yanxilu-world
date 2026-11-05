@@ -7,7 +7,7 @@ os.makedirs(OUT, exist_ok=True)
 BEVEL = {"post", "beam", "wall_plain", "wall_plain_mir", "wall_plain_full", "wall_door", "wall_window", "door_leaf", "gable"}
 KIND = {k: "building" for k in BUILD}
 KIND.update({f"rock_{i}": "scatter" for i in range(4)}); KIND.update({f"step_{i}": "scatter" for i in range(3)})
-KIND.update({"grass_tuft": "scatter", "lantern": "prop"})
+KIND.update({"grass_tuft": "scatter", "lantern": "prop", "campfire": "prop"})
 tmpc = clear_coll("_export")
 
 

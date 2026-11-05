@@ -226,6 +226,10 @@ def rock(size=512):
 
 
 out["rock"] = rock()
+# 劈柴的木茬：材质板旧木转成竖纹、偏暖、提到明度约 118（新劈开的木头比柱梁亮，篝火里要看得出木茬，2026-11-05）
+_pl = Image.open(os.path.join(SRC, "materials", "planks.jpg")).convert("RGB").transpose(Image.ROTATE_90)
+_pl = Image.fromarray(np.clip(np.asarray(_pl).astype(np.float32) * np.float32([1.12, 1.0, 0.8]), 0, 255).astype(np.uint8))
+out["firewood"] = grade(_pl, 118 / med(_pl), 1.1).resize((512, 512), Image.LANCZOS)
 
 
 def tuft(size=256):

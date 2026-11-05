@@ -229,6 +229,14 @@
    "kind": "building",
    "pack": "song",
    "status": "imported"
+  },
+  "campfire": {
+   "model": "packs/song/prop/campfire/campfire.gltf.json",
+   "def": "packs/song/prop/campfire/campfire.json",
+   "tris": 1272,
+   "kind": "prop",
+   "pack": "song",
+   "status": "imported"
   }
  },
  "palette": {

@@ -81,12 +81,27 @@
    }
   },
   {
-   "id": "campfire_light",
-   "name": "篝火的光（模型待做）",
+   "id": "campfire",
+   "name": "篝火（石圈 + 劈柴 + 灰 + 炭，Blender 程序建）",
    "components": {
     "Transform": {
      "x": 290,
-     "y": 35,
+     "y": 0,
+     "z": -340
+    },
+    "Model": {
+     "file": "campfire",
+     "castShadow": true
+    }
+   }
+  },
+  {
+   "id": "campfire_light",
+   "name": "篝火的光",
+   "components": {
+    "Transform": {
+     "x": 290,
+     "y": 55,
      "z": -340
     },
     "Light": {
@@ -102,7 +117,8 @@
      "periods": [
       "dusk",
       "night"
-     ]
+     ],
+     "note": "光源放在柴堆尖顶上方（35 厘米时紧挨柴头，照成一片白）"
     }
    }
   }

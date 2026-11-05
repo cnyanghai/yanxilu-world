@@ -85,7 +85,7 @@ def rig(period):
         world("#c4d2e8", "#5e5444", 1.45)      # 天光取 vis 补光的冷蓝灰（#dfe6f0 一路），地面反光取土色；阴影偏冷、亮面偏暖
         light("sun_key", "SUN", color="#f5e6c0", energy=6.3, direction=sun_dir(63))   # vis dir (-0.6,-0.9,0.3) 的水平方位：右前方
         sc.view_settings.exposure = -1.15     # 受光 : 背光目标 2.5 : 1，整图中位 40 到 55、最暗 5% ≤ 12
-        lantern(0.0)
+        lantern(0.0); ember(0.0)
     else:
         world("#3a4c6e", "#0e1218", 1.2)      # 夜空冷蓝，压住死黑（目标死黑 < 30%）
         light("sun_key", "SUN", color="#9fb4dc", energy=0.9, direction=sun_dir(-130))   # 月光从左后方，勾屋面与轮廓
@@ -93,7 +93,14 @@ def rig(period):
         light("lamp_window", "AREA", (1.0, 0.7, 1.3), "#ffbf80", 70, direction=(0, 1, 0), size=(0.9, 0.7))  # 屋里灯从窗透出
         light("lamp_fire", "POINT", (2.9, 3.4, 0.35), "#ffb47a", 330, 0.3)              # 篝火（模型待做）
         sc.view_settings.exposure = 0.0
-        lantern(12.0)
+        lantern(12.0); ember(5.0)
+
+
+def ember(glow):
+    """篝火里的炭：夜里发红（材质 m_ember 由 kitlib.m_campfire 建）。"""
+    m = bpy.data.materials.get("m_ember")
+    if m:
+        m.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = glow
 
 
 def lantern(glow):
