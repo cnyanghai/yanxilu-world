@@ -66,7 +66,8 @@ for k in [f"rock_{i}" for i in range(4)] + [f"step_{i}" for i in range(3)] + ["g
     if bpy.data.meshes.get(k):
         export_one(k, [(bpy.data.meshes[k], (0, 0, 0))]); done.append(k)
 if bpy.data.objects.get("lantern"):   # 灯笼 + 吊绳：原点在灯笼中心；按物体取网格（重建时网格名可能带 .001）
-    export_one("lantern", [(bpy.data.objects["lantern"].data, (0, 0, 0)), (bpy.data.objects["lantern_cord"].data, (0, 0, 0.16))]); done.append("lantern")
+    lo, co = bpy.data.objects["lantern"], bpy.data.objects["lantern_cord"]
+    export_one("lantern", [(lo.data, (0, 0, 0)), (co.data, tuple(co.location - lo.location))]); done.append("lantern")
 for o in list(tmpc.objects):
     bpy.data.objects.remove(o, do_unlink=True)
 bpy.data.collections.remove(tmpc)

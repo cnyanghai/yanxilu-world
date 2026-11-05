@@ -89,7 +89,7 @@ def rig(period):
     else:
         world("#3a4c6e", "#0e1218", 1.2)      # 夜空冷蓝，压住死黑（目标死黑 < 30%）
         light("sun_key", "SUN", color="#9fb4dc", energy=0.9, direction=sun_dir(-130))   # 月光从左后方，勾屋面与轮廓
-        light("lamp_door", "POINT", (-1.72, 1.25, 1.72), "#ffc890", 80, 0.06)            # 门边檐下灯笼
+        light("lamp_door", "POINT", (-1.72, 1.25, LANTERN_Z), "#ffc890", 80, 0.06)       # 门边檐下灯笼
         light("lamp_window", "AREA", (1.0, 0.7, 1.3), "#ffbf80", 70, direction=(0, 1, 0), size=(0.9, 0.7))  # 屋里灯从窗透出
         light("lamp_fire", "POINT", (2.9, 3.4, 0.35), "#ffb47a", 330, 0.3)              # 篝火（模型待做）
         sc.view_settings.exposure = 0.0
@@ -101,6 +101,10 @@ def ember(glow):
     m = bpy.data.materials.get("m_ember")
     if m:
         m.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = glow
+
+
+LANTERN_Z = 1.82   # 灯笼中心高；2026-11-05 人形巡检提示 1.72 时底边 1.59、1.5 米的人头顶只剩 9 厘米，挂高 10 厘米
+EAVE_Z = 2.15      # 灯笼所在处（y 1.25）的檐底高
 
 
 def lantern(glow):
@@ -116,11 +120,12 @@ def lantern(glow):
         me = bpy.data.meshes.new("lantern"); bm.to_mesh(me); bm.free()
         m = bpy.data.materials.new("m_lantern"); m.use_nodes = True; me.materials.append(m)
         o = bpy.data.objects.new("lantern", me); (bpy.data.collections.get("shed") or sc.collection).objects.link(o)
-        o.location = (-1.72, 1.25, 1.72)
-        bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=6, radius1=0.006, radius2=0.006, depth=0.32)
+        o.location = (-1.72, 1.25, LANTERN_Z)
+        top = LANTERN_Z + 0.13; cord = EAVE_Z + 0.02 - top                              # 吊绳从灯笼顶到檐底（伸进屋面 2 厘米）
+        bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=6, radius1=0.006, radius2=0.006, depth=cord)
         cm = bpy.data.meshes.new("lantern_cord"); bm.to_mesh(cm); bm.free(); cm.materials.append(bpy.data.materials.get("m_post_f"))
         cd = bpy.data.objects.new("lantern_cord", cm); (bpy.data.collections.get("shed") or sc.collection).objects.link(cd)
-        cd.location = (-1.72, 1.25, 1.85 + 0.16)   # 吊绳挂到檐下（檐底在 y 1.25 处约 z 2.15）
+        cd.location = (-1.72, 1.25, top + cord / 2)
     if not o.data.materials or o.data.materials[0] is None:      # 组件库重建会清材质，灯笼丢了就补
         m = bpy.data.materials.get("m_lantern") or bpy.data.materials.new("m_lantern"); m.use_nodes = True
         o.data.materials.clear(); o.data.materials.append(m)
