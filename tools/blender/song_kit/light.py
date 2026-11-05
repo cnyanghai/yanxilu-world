@@ -111,7 +111,7 @@ def lantern(glow):
         cd = bpy.data.objects.new("lantern_cord", cm); (bpy.data.collections.get("shed") or sc.collection).objects.link(cd)
         cd.location = (-1.72, 1.25, 1.85 + 0.16)   # 吊绳挂到檐下（檐底在 y 1.25 处约 z 2.15）
     b = o.data.materials[0].node_tree.nodes["Principled BSDF"]
-    b.inputs["Base Color"].default_value = (*lin("#d8c8a0"), 1); b.inputs["Roughness"].default_value = 0.8
+    b.inputs["Base Color"].default_value = (*lin("#a89470"), 1); b.inputs["Roughness"].default_value = 0.8
     b.inputs["Emission Color"].default_value = (*lin("#ffc890"), 1); b.inputs["Emission Strength"].default_value = glow
 
 

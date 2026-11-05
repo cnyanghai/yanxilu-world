@@ -281,3 +281,39 @@ Claude 的观察：没有屋顶的小屋从 40 度俯角能看见书墙、桌、
 光的参数（导进 /world 时照此改 vis）：白天主光 #f5e6c0 从右前方、俯角 47，天光改冷蓝灰 #c4d2e8（原 #e8e0c8 偏暖，阴影里没有冷色、整张一种黄），地面反光 #5e5444；夜晚月光 #9fb4dc 从左后方、夜空 #3a4c6e，门边灯笼 #ffc890、窗内透光 #ffbf80、篝火 #ffb47a。
 
 **贴图密度没到。** 三视图一张图里放三个视图，单个视图的原图宽度有限：茅草正面原图 637 像素摊在 2 米上，实际约 320 像素/米；平墙约 400 像素/米；放大到 512 只是数字。要到 500 像素/米，得每件按单视图重出（一张图只画正面，1024 像素对 2 米），出图前先报提示词。
+
+### 10.5 续：第二轮（2026-11-04，明度结构、旧化、地面散布）
+
+第一轮之后的差处：材质明度都在 110 上下（ART-BIBLE 第 9 节第二条的老问题）、整张一种黄褐、地面空。改法：
+
+| 项 | 改法 |
+|---|---|
+| 明度结构（贴图明度中位） | 泥墙不动（约 111，最亮）；茅草与屋脊 105、饱和 × 0.75（旧草）；柱梁 72、× 0.8；下段木板与门扇 62、× 0.75；土 67；石面 72 冷灰。墙图按"下段木板 + 两侧立框"掩膜只调木头部分。数在 `prep_textures.py` 的 `VALUE` |
+| 脏边 | 墙脚、柱脚 35 厘米内渐暗到 0.55，夹噪声成片 |
+| 茅草旧化 | 顶点色 Col（线性浮点）：近脊 1.04、近檐 0.84，夹 ±0.1 的成片斑；噪声按 2 米周期。导出 glTF 为 COLOR_0，three.js 材质开 vertexColors |
+| 地面分层图 | `ground_mask.png`（12 × 12 米，32 像素/米）：R 草（噪声成片、房子 0.2 到 0.9 米内踩秃、路上无草）、G 潮暗（檐下滴水线 + 路）、B 路（门口向前弯出去） |
+| 散布 | `scatter.json` 与分层图同源同种子：草丛 270 余丛（三片交叉插片，程序画的草叶，橄榄绿夹 18% 枯黄）、石块 40 块（四种，墙脚偏四角、路边、散落）、踏步石 7 块（三种），`scatter.py` 摆进 Blender；以后游戏里同一份数据做实例 |
+| 门洞墙贴图 | 当初的拉伸没存脚本，复原不出（平均差 9）；改为按原图暗区重量门洞内口（裁框内 x 325 到 572、上沿 133），拉伸并进 `prep_textures.py`，文件名统一为 `wall_door_f / _s` |
+
+| 图 | 中位 | 最暗 5% | 其他 | 对照 M1 门 |
+|---|---|---|---|---|
+| 白天远景 | 53 | 8 | 受光屋面 85 : 背光侧墙 38（2.2 : 1） | 全过（光比略低于 2.5） |
+| 白天近景 | 40 | 3 | | 过（中位贴下限） |
+| 夜晚远景 | 13 | 2 | 死黑 17.8% | 过 |
+| 夜晚近景 | 22 | 1 | 死黑 15.7% | 过 |
+
+### 10.6 材质板六块（待出图，等用户点头）
+
+解决贴图密度（实际 320 到 400 像素/米 → 目标 ≥ 500）。不再拿三视图当贴图，改成：可平铺材质 + 按组件的布局掩膜离线合成（泥皮 / 编竹 / 木板的分区来自现有三视图，掩膜放大不失真），合成到 768 像素/米。茅草直接用平铺材质，压条已是几何，不再靠画。也就是 ART-BIBLE 第二版第 3 节排过的"材质板六块"，把其中的石板换成泥皮（石板地面图已有）。
+
+- 模型 gpt-image-2 中档（fal），1:1 1024 × 1024，单价 0.376 元，6 张约 2.26 元。不带参考图（参考图会把材质往它最像的那件上拉，见 10.4 教训）。
+- 出图后脚本做两向无缝（最小差切缝）、量明度按 10.5 的档位调。
+- 公共后缀：`Seamless tileable texture, orthographic straight-on view, the material fills the entire square frame edge to edge, even flat neutral lighting, no cast shadows, no vignette, no objects, no text, photoreal PBR albedo for a stylized-realistic game, slightly desaturated warm earth tones.`
+- 六块（前接后缀）：
+  1. 茅草：`Old rice-straw thatch surface seen straight on, 1 m by 1 m area, thousands of straw stalks running vertically top to bottom, densely packed in slightly uneven tufts, aged grey-brown with some golden stalks, no bindings, no rods, no gaps.`
+  2. 编竹：`Bare woven bamboo wattle, 0.8 m by 0.8 m area, flat split-bamboo strips woven horizontally over and under vertical round stakes about 12 cm apart, weathered tan, dark gaps between strips, no clay.`
+  3. 旧木：`Five horizontal weathered pine planks stacked edge to edge, each about 20 cm tall, 1 m by 1 m area, grey-brown sun-bleached grain, cracks, a few iron nail heads, thin dark seams between planks.`
+  4. 泥皮：`Ochre clay plaster wall surface, 1 m by 1 m area, mixed with chopped straw fibres, trowel marks, fine hairline cracks, slight color mottling, no holes, no exposed weave.`
+  5. 夯土：`Rammed earth wall surface, 1 m by 1 m area, horizontal compacted layers about 10 cm thick, small pebbles and straw, slightly crumbling layer edges, warm brown-ochre.`
+  6. 青瓦：`Grey-blue fired clay roof tiles seen from directly above, 1 m by 1 m area, overlapping rows of concave pan tiles and convex cover tiles running vertically, slight moss and soot, Song-dynasty style.`
+

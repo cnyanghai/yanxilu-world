@@ -14,6 +14,7 @@ V = {  # 件: [(x0,y0,x1,y1) 各视图]
  "beam": [(33,453,673,569),(726,453,852,569)],
  "wall_plain": [(361,107,1153,885),(136,104,240,889)],
  "wall_window": [(361,107,1179,885),(136,105,239,889)],
+ "wall_door": [(318,138,1215,880),(126,134,215,882)],
  "gable": [(54,294,975,753),(1103,295,1181,753)],
  "roof_thatch": [(59,264,696,750),(741,263,834,749),(882,263,1464,748)],
  "ridge": [(30,385,753,644),(797,381,1115,645)],
@@ -21,7 +22,7 @@ V = {  # 件: [(x0,y0,x1,y1) 各视图]
 }
 SIZE = {  # 件: [(宽米, 高米) 各视图]
  "post": [(0.16,2.4),(0.16,2.4)], "beam": [(2.0,0.16),(0.16,0.16)],
- "wall_plain": [(2.0,2.2),(0.12,2.2)], "wall_window": [(2.0,2.2),(0.12,2.2)],
+ "wall_plain": [(2.0,2.2),(0.12,2.2)], "wall_window": [(2.0,2.2),(0.12,2.2)], "wall_door": [(2.0,2.2),(0.12,2.2)],
  "gable": [(2.0,1.0),(0.12,1.0)], "roof_thatch": [(2.0,1.7),(0.25,1.7),(2.0,1.7)],
  "ridge": [(2.0,0.3),(0.45,0.3)], "door_leaf": [(0.9,1.95),(0.05,1.95)],
 }
@@ -40,10 +41,25 @@ def warp_window(im, box):
             out.paste(f.crop((c0, r0, c1, r1)).resize((px(u1) - px(u0), px(v1) - px(v0)), Image.LANCZOS), (px(u0), px(v0)))
     return out
 out = {}
+def warp_door(im, box):
+    """门洞墙：图里黑色门洞内口（2026-11-04 按暗区量：裁框内 x 325 到 572、上沿 133）分段拉到 0.9 × 1.95、居中。"""
+    f = im.crop(box); w, h = f.size
+    cols = [(0, 325, 0, 0.55), (325, 572, 0.55, 1.45), (572, w, 1.45, 2.0)]
+    rows = [(0, 133, 0, 0.25), (133, h, 0.25, 2.2)]
+    out = Image.new("RGB", (px(2.0), px(2.2)))
+    for c0, c1, u0, u1 in cols:
+        for r0, r1, v0, v1 in rows:
+            out.paste(f.crop((c0, r0, c1, r1)).resize((px(u1) - px(u0), px(v1) - px(v0)), Image.LANCZOS), (px(u0), px(v0)))
+    return out
+
+
 for k, boxes in V.items():
     im = Image.open(os.path.join(SRC, k + ".jpg")).convert("RGB")
     for n, (box, (wm, hm)) in enumerate(zip(boxes, SIZE[k])):
-        img = warp_window(im, box) if (k == "wall_window" and n == 0) else im.crop(box).resize((px(wm), px(hm)), Image.LANCZOS)
+        if n == 0 and k in ("wall_window", "wall_door"):
+            img = (warp_window if k == "wall_window" else warp_door)(im, box)
+        else:
+            img = im.crop(box).resize((px(wm), px(hm)), Image.LANCZOS)
         out[f"{k}_{'fsb'[n]}"] = img
 
 
@@ -117,6 +133,57 @@ def normal(img, strength=2.0):
 
 for k in ("roof_thatch_f", "roof_thatch_b", "ridge_f"):
     out[k] = seamless_x(out[k])
+
+
+# ---------- 明度结构（ART-BIBLE 第 9 节第二条：材质明度拉开；2026-11-04 第二轮） ----------
+def grade(img, k=1.0, sat=1.0, mask=None):
+    """明度乘 k、饱和乘 sat（按亮度向灰拉）；mask（H×W，0 到 1）给了就只改这块。"""
+    a = np.asarray(img).astype(np.float32); g = (a @ np.float32([0.299, 0.587, 0.114]))[..., None]
+    b = (g + (a - g) * sat) * k
+    if mask is not None:
+        b = a * (1 - mask[..., None]) + b * mask[..., None]
+    return Image.fromarray(b.clip(0, 255).astype(np.uint8))
+
+
+def med(img, mask=None):
+    L = np.asarray(img.convert("L")).astype(np.float32)
+    return float(np.median(L[mask > 0.5] if mask is not None else L))
+
+
+def wood_mask(img, ratio, edge=40):
+    """墙图里的木头：下段木板（ratio 以下）+ 两侧画上的立框。"""
+    w, h = img.size; m = np.zeros((h, w), np.float32); m[int(h * ratio):] = 1
+    if edge:
+        m[:, :edge] = 1; m[:, w - edge:] = 1
+    return gaussian_filter(m, 3)
+
+
+def grime(img, h_m, top=0.35):
+    """墙脚 / 柱脚溅泥：底部 top 米内渐暗到 0.55，夹噪声成片。h_m 为图的实高（米）。"""
+    a = np.asarray(img).astype(np.float32); H, W, _ = a.shape
+    z = (H - 1 - np.arange(H)) / (H - 1) * h_m
+    t = np.clip(z / top, 0, 1); f = 0.55 + 0.45 * (t * t * (3 - 2 * t))
+    n = gaussian_filter(rng.random((H, W)).astype(np.float32), 6); n = (n - n.min()) / (n.max() - n.min() + 1e-6)
+    F = 1 - (1 - f[:, None]) * (0.6 + 0.8 * n)
+    return Image.fromarray((a * np.clip(F, 0.35, 1)[..., None]).clip(0, 255).astype(np.uint8))
+
+
+VALUE = {"thatch": (105, 0.75), "wood": (72, 0.8), "plank": (62, 0.75), "door": (62, 0.75), "stone": (72, 0.6)}
+kt = VALUE["thatch"][0] / med(out["roof_thatch_f"])
+for k in ("roof_thatch_f", "roof_thatch_b", "roof_thatch_s", "ridge_f", "ridge_s"):
+    out[k] = grade(out[k], kt, VALUE["thatch"][1])
+kw = VALUE["wood"][0] / med(out["post_f"])
+for k in ("post_f", "post_s", "beam_f", "beam_s"):
+    out[k] = grade(out[k], kw, VALUE["wood"][1])
+kd = VALUE["door"][0] / med(out["door_leaf_f"])
+for k in ("door_leaf_f", "door_leaf_s"):
+    out[k] = grade(out[k], kd, VALUE["door"][1])
+for k, ratio in (("wall_plain", 0.695), ("wall_door", 0.68), ("wall_window", 0.672)):
+    f = out[k + "_f"]; m = wood_mask(f, ratio)
+    out[k + "_f"] = grime(grade(f, VALUE["plank"][0] / med(f, m), VALUE["plank"][1], m), 2.2)
+    sd = out[k + "_s"]; out[k + "_s"] = grime(grade(sd, VALUE["plank"][0] / med(f, m), VALUE["plank"][1], wood_mask(sd, ratio, 0)), 2.2)
+for k in ("post_f", "post_s"):
+    out[k] = grime(out[k], 2.4)
 pal = np.asarray(out["roof_thatch_f"]).reshape(-1, 3).astype(np.float32); pal = pal[pal.mean(1) > 110][::97]
 out["thatch_end"] = strands(px(2.0), px(0.3), pal, 9000, 4, 18, 2, 0.5, False).convert("RGB")
 fringe = strands(px(2.0), px(0.19), pal, 2600, 25, 95, 2, 0.12, True)
@@ -124,11 +191,96 @@ out["wall_plain_mir_f"] = out["wall_plain_f"].transpose(Image.FLIP_LEFT_RIGHT)
 out["wall_plain_full_f"] = wall_full(out["wall_plain_f"])
 # 地面：原图偏亮（中位 129）且橙，压到中位约 67、降饱和，让房子从地上跳出来；草地是第二层
 from PIL import ImageEnhance
-for g, k, sat in (("ground_dirt", 0.52, 0.72), ("ground_grass", 0.6, 0.8)):
+for g, k, sat in (("ground_dirt", 0.52, 0.72), ("ground_grass", 0.78, 0.95)):
     im = Image.open(os.path.join(SRC, g + ".jpg")).convert("RGB")
     out[g] = ImageEnhance.Color(ImageEnhance.Brightness(im).enhance(k)).enhance(sat)
+st = Image.open(os.path.join(SRC, "ground_stone.jpg")).convert("RGB")
+out["stone"] = grade(st, VALUE["stone"][0] / med(st), VALUE["stone"][1])   # 碎石铺地（以后做石板路印章）
+
+
+def rock(size=512):
+    """单块石头的石面（不带灰缝）：取铺地图里石头部分的颜色，多层噪声 + 细麻点 + 少量暗裂，四边回绕可平铺。冷灰，画面里的第二种色相。"""
+    a = np.asarray(out["stone"]).astype(np.float32); L = a.mean(2); base = a[L > np.percentile(L, 55)].mean(0)
+    n = sum(gaussian_filter(rng.random((size, size)), s_, mode="wrap") * w_ for s_, w_ in ((40, 3.0), (12, 1.5), (3, 0.8), (1, 0.4)))
+    n = (n - n.mean()) / n.std()
+    crack = gaussian_filter(rng.random((size, size)), 6, mode="wrap"); crack = np.abs(crack - crack.mean()) / crack.std() < 0.06
+    v = 1 + 0.16 * n - 0.35 * gaussian_filter(crack.astype(np.float32), 1, mode="wrap")
+    g = gaussian_filter(rng.random((size, size)), 50, mode="wrap"); g = (g - g.mean()) / g.std()
+    tint = 1 + 0.05 * g[..., None] * np.float32([1.0, 0.3, -0.7])        # 大片里略偏暖或偏冷
+    return Image.fromarray(np.clip(base * v[..., None] * tint, 0, 255).astype(np.uint8))
+
+
+out["rock"] = rock()
+
+
+def tuft(size=256):
+    """草丛插片（RGBA）：草叶从底部中间散开向上，橄榄绿夹枯黄。"""
+    from PIL import ImageDraw
+    S = 2; W2 = size * S; im = Image.new("RGBA", (W2, W2), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    gp = np.asarray(out["ground_grass"]).reshape(-1, 3).astype(np.float32); gp = gp[::53]
+    for _ in range(220):
+        x0 = W2 / 2 + rng.normal(0, W2 * 0.12); ln = rng.uniform(0.35, 0.95) * W2; ang = rng.normal(0, 0.38)
+        dry = rng.random() < 0.18
+        c = gp[rng.integers(len(gp))] * rng.uniform(1.0, 1.4) * np.float32([0.85, 1.12, 0.8])
+        if dry:
+            c = np.float32([150, 128, 82]) * rng.uniform(0.7, 1.1)
+        pts = [(x0 + ln * t * np.sin(ang) + 0.25 * ln * t * t * np.sin(ang * 2), W2 - ln * t) for t in np.linspace(0, 1, 6)]
+        wd = int(rng.integers(2, 5)) * S
+        for (xa, ya), (xb, yb) in zip(pts, pts[1:]):
+            d.line([(xa, ya), (xb, yb)], fill=tuple(int(v) for v in np.clip(c, 0, 255)) + (255,), width=max(1, wd))
+            wd = max(S, int(wd * 0.8))
+    return im.resize((size, size), Image.LANCZOS)
+
+
+tuft().save(os.path.join(OUT, "grass_tuft.png"))
+
+# 地面分层图（12 × 12 米，32 像素/米；R 草、G 潮暗、B 路），以 Blender 物体坐标 (x+6)/12、(y+6)/12 取；散布位置同源写 scatter.json
+import json
+GN = 384; xs_ = -6 + (np.arange(GN) + 0.5) / 32; X, Y = np.meshgrid(xs_, xs_[::-1])
+def smooth(e0, e1, v):
+    t = np.clip((v - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t)
+nz = gaussian_filter(rng.random((GN, GN)), 38) ; nz = (nz - nz.min()) / (nz.max() - nz.min())
+nz2 = gaussian_filter(rng.random((GN, GN)), 9); nz2 = (nz2 - nz2.min()) / (nz2.max() - nz2.min())
+dshed = np.maximum(np.abs(X) - 2.3, np.abs(Y) - 1.45)
+pathx = lambda y: -1 + 0.18 * np.sin((y - 1.5) * 0.9) + 0.05 * (y - 1.5)
+path = (1 - smooth(0.32, 0.6, np.abs(X - pathx(Y)))) * smooth(1.2, 1.6, Y)
+grass = smooth(0.36, 0.56, 0.75 * nz + 0.25 * nz2) * smooth(0.2, 0.9, dshed) * (1 - path)
+damp = np.exp(-((dshed - 0.05) / 0.12) ** 2)
+G = np.clip(0.6 * damp + 0.35 * path, 0, 1)
+Image.fromarray((np.dstack([grass, G, path]) * 255).astype(np.uint8)).save(os.path.join(OUT, "ground_mask.png"))
+def at(x, y, ch):
+    j = int(np.clip((x + 6) * 32, 0, GN - 1)); i = int(np.clip((6 - y) * 32, 0, GN - 1)); return float(ch[i, j])
+sc = {"tufts": [], "stones": [], "steps": []}
+while len(sc["tufts"]) < 260:
+    x, y = rng.uniform(-5.8, 5.8, 2)
+    if rng.random() < at(x, y, grass) ** 1.5 * 0.9:
+        sc["tufts"].append([round(x, 3), round(y, 3), round(float(rng.uniform(0, 360)), 1), round(float(rng.uniform(0.6, 1.3)), 2)])
+for _ in range(14):   # 墙脚杂草：贴着墙外 5 到 25 厘米，偏向四角
+    side = rng.integers(4); t = rng.uniform(-1, 1) ** 3
+    x, y = [(t * 2.2, 1.55), (t * 2.2, -1.55), (2.4, t * 1.3), (-2.4, t * 1.3)][side]
+    if side == 0 and abs(x + 1) < 0.6: continue    # 门前不长
+    sc["tufts"].append([round(x, 3), round(y, 3), round(float(rng.uniform(0, 360)), 1), round(float(rng.uniform(0.45, 0.8)), 2)])
+def stone(x, y, smin, smax):
+    sc["stones"].append([round(x, 3), round(y, 3), round(float(rng.uniform(0, 360)), 1), round(float(rng.uniform(smin, smax)), 3), int(rng.integers(4))])
+for _ in range(10):   # 墙脚：偏向四角、离墙远近不一，免得排成一条线
+    side = rng.integers(4); t = np.sign(rng.uniform(-1, 1)) * rng.uniform(0.3, 1) ** 0.5
+    x, y = [(t * 2.3, 1.6), (t * 2.3, -1.6), (2.45, t * 1.4), (-2.45, t * 1.4)][side]
+    if side == 0 and abs(x + 1) < 0.55: continue
+    stone(x + rng.normal(0, 0.18), y + rng.normal(0, 0.18), 0.05, 0.15)
+for _ in range(12):   # 路边
+    y = rng.uniform(1.8, 5.8); stone(pathx(y) + rng.choice([-1, 1]) * rng.uniform(0.45, 0.7), y, 0.05, 0.14)
+n_ = 0
+while n_ < 18:        # 散落，避开路
+    x, y = rng.uniform(-5.6, 5.6, 2)
+    if at(x, y, path) < 0.2 and abs(x) > 2.6 or abs(y) > 1.8:
+        if at(x, y, path) < 0.2: stone(x, y, 0.06, 0.24); n_ += 1
+for y in (1.78, 2.36, 2.95, 3.55, 4.17, 4.8, 5.45):   # 踏步石
+    sc["steps"].append([round(float(pathx(y) + rng.normal(0, 0.05)), 3), round(float(y + rng.normal(0, 0.04)), 3),
+                        round(float(rng.uniform(0, 360)), 1), round(float(rng.uniform(0.36, 0.48)), 3), int(rng.integers(3))])
+json.dump(sc, open(os.path.join(OUT, "scatter.json"), "w"))
+
 # 法线强度：由明度推的高度会把暗处当凹处，开太猛有浮雕味（2026-11-04 近景看过，2.0 偏猛）
-STRENGTH = {"roof_thatch_f": 1.6, "thatch_end": 2.0, "ridge_f": 1.6, "ground_dirt": 1.0, "ground_grass": 1.0}
+STRENGTH = {"roof_thatch_f": 1.6, "thatch_end": 2.0, "ridge_f": 1.6, "ground_dirt": 1.0, "ground_grass": 1.0, "stone": 1.6, "rock": 2.2}
 for k, img in out.items():
     save(img, k + ".jpg")
     normal(img, STRENGTH.get(k, 0.9)).save(os.path.join(OUT, k + "_n.png"))

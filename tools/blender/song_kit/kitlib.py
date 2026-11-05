@@ -30,7 +30,8 @@ def _img(f, data=False):
     return im
 
 
-def mat(img, rough=0.85, nstr=1.0, alpha=False):
+def mat(img, rough=0.85, nstr=1.0, alpha=False, vcol=False):
+    """vcol：底色乘顶点色 Col（旧化；导出 glTF 为 COLOR_0，three.js 开 vertexColors）。"""
     name = "m_" + img.split(".")[0]
     m = bpy.data.materials.get(name)
     if m:
@@ -38,7 +39,13 @@ def mat(img, rough=0.85, nstr=1.0, alpha=False):
     m = bpy.data.materials.new(name); m.use_nodes = True
     nt = m.node_tree; bsdf = nt.nodes.get("Principled BSDF"); t = nt.nodes.new("ShaderNodeTexImage")
     t.image = _img(img)
-    nt.links.new(t.outputs["Color"], bsdf.inputs["Base Color"])
+    if vcol:
+        vc = nt.nodes.new("ShaderNodeVertexColor"); vc.layer_name = "Col"
+        mx = nt.nodes.new("ShaderNodeMix"); mx.data_type = "RGBA"; mx.blend_type = "MULTIPLY"; mx.inputs["Factor"].default_value = 1.0
+        nt.links.new(t.outputs["Color"], mx.inputs[6]); nt.links.new(vc.outputs["Color"], mx.inputs[7])
+        nt.links.new(mx.outputs[2], bsdf.inputs["Base Color"])
+    else:
+        nt.links.new(t.outputs["Color"], bsdf.inputs["Base Color"])
     bsdf.inputs["Roughness"].default_value = rough
     if alpha:  # 散草：透明裁切，双面
         nt.links.new(t.outputs["Alpha"], bsdf.inputs["Alpha"])
@@ -133,7 +140,7 @@ def m_wall_door():
     boxes = [(-W/2, -W/2 + L, -T/2, T/2, 0, H, None), (W/2 - L, W/2, -T/2, T/2, 0, H, None),
              (-DW/2, DW/2, -T/2, T/2, DH, H, None),
              _trim(-DW/2 - f, -DW/2, 0, DH + f, T), _trim(DW/2, DW/2 + f, 0, DH + f, T), _trim(-DW/2, DW/2, DH, DH + f, T)]
-    return box_mesh("wall_door", boxes, W, T, H, [mat("wall_door_front.jpg"), mat("wall_door_side.jpg"), mat("post_f.jpg")])
+    return box_mesh("wall_door", boxes, W, T, H, [mat("wall_door_f.jpg"), mat("wall_door_s.jpg"), mat("post_f.jpg")])
 
 
 def m_wall_window():
@@ -298,11 +305,20 @@ def m_roof_thatch(kind="mid"):
         for c in range(len(xs) - 1):
             u0, u1 = xw[c] / 2 + uoff, xw[c + 1] / 2 + uoff
             _quad(bm, uv, [top[c], top[c + 1], bot[c + 1], bot[c]], [(u0, 1), (u1, 1), (u1, 0), (u0, 0)], 4)
+    # 旧化（顶点色）：近脊晒白一点、近檐发暗（雨淋），夹成片的斑；噪声按 2 米周期，相邻件接得上
+    col = bm.loops.layers.float_color.new("Col")   # 线性浮点（字节色会按 sRGB 换算多暗一截；glTF 的 COLOR_0 也是线性）
+    for f in bm.faces:
+        for l in f.loops:
+            p = l.vert.co; w = p.x + 1.0 if kind == "mid" else p.x
+            t = min(max((p.y / L_ROOF - 0.35) / 0.65, 0.0), 1.0); t = t * t * (3 - 2 * t)
+            th = math.pi * w; n = _noise.noise(Vector((1.3 * math.cos(th), 1.3 * math.sin(th), p.y * 2.4 + 11.0)))
+            v = (1.04 - 0.2 * t) * (0.92 + 0.1 * n)
+            l[col] = (v, v * 0.98, v * 0.95, 1.0)
     bm.normal_update()
     me = bpy.data.meshes.new("roof_" + kind); bm.to_mesh(me); bm.free()
     for img in ("roof_thatch_f.jpg", "thatch_end.jpg", "roof_thatch_b.jpg", "roof_thatch_s.jpg"):
-        me.materials.append(mat(img, 0.95))
-    me.materials.append(mat("thatch_fringe.png", 0.95, 0, alpha=True))
+        me.materials.append(mat(img, 0.95, vcol=True))
+    me.materials.append(mat("thatch_fringe.png", 0.95, 0, alpha=True, vcol=True))
     return me
 
 

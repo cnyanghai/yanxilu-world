@@ -41,28 +41,25 @@ def ground_mat():
     def tex(f, data=False):
         t = N.new("ShaderNodeTexImage"); t.image = _img(f, data); Lk(mp.outputs["Vector"], t.inputs["Vector"]); return t
     dirt, grass, dn, gn = tex("ground_dirt.jpg"), tex("ground_grass.jpg"), tex("ground_dirt_n.png", True), tex("ground_grass_n.png", True)
-    nz = N.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = 0.35; nz.inputs["Detail"].default_value = 6
-    Lk(tc.outputs["Object"], nz.inputs["Vector"])
-    ramp = N.new("ShaderNodeMapRange"); ramp.inputs["From Min"].default_value = 0.46; ramp.inputs["From Max"].default_value = 0.58
-    Lk(nz.outputs["Fac"], ramp.inputs["Value"])
-    sep = N.new("ShaderNodeSeparateXYZ"); Lk(tc.outputs["Object"], sep.inputs["Vector"])
-    def op(kind, a, b=None, v=None):
+    # 地面分层图 ground_mask.png（prep_textures.py 生成，12 × 12 米）：R 草、G 潮暗（檐下滴水线 + 路）、B 路
+    mm = N.new("ShaderNodeMapping"); mm.inputs["Location"].default_value = (0.5, 0.5, 0); mm.inputs["Scale"].default_value = (1 / 12, 1 / 12, 1)
+    Lk(tc.outputs["Object"], mm.inputs["Vector"])
+    mt = N.new("ShaderNodeTexImage"); mt.image = _img("ground_mask.png", True); mt.extension = "EXTEND"; Lk(mm.outputs["Vector"], mt.inputs["Vector"])
+    sp = N.new("ShaderNodeSeparateColor"); Lk(mt.outputs["Color"], sp.inputs["Color"])
+    def op(kind, a, b):
         n = N.new("ShaderNodeMath"); n.operation = kind
-        Lk(a, n.inputs[0]) if not isinstance(a, float) else n.inputs[0].__setattr__("default_value", a)
-        if b is not None:
-            Lk(b, n.inputs[1]) if not isinstance(b, float) else n.inputs[1].__setattr__("default_value", b)
+        for i, x in enumerate((a, b)):
+            Lk(x, n.inputs[i]) if not isinstance(x, float) else n.inputs[i].__setattr__("default_value", x)
         return n.outputs[0]
-    dx = op("SUBTRACT", op("ABSOLUTE", sep.outputs["X"]), 2.5); dy = op("SUBTRACT", op("ABSOLUTE", sep.outputs["Y"]), 1.5)
-    away = N.new("ShaderNodeMapRange"); away.inputs["From Min"].default_value = 0.3; away.inputs["From Max"].default_value = 1.6
-    Lk(op("MAXIMUM", dx, dy), away.inputs["Value"])
-    mask = op("MULTIPLY", ramp.outputs["Result"], away.outputs["Result"])
+    mask = sp.outputs["Red"]
     mix = N.new("ShaderNodeMix"); mix.data_type = "RGBA"; Lk(mask, mix.inputs["Factor"])
     Lk(dirt.outputs["Color"], mix.inputs[6]); Lk(grass.outputs["Color"], mix.inputs[7])
     big = N.new("ShaderNodeTexNoise"); big.inputs["Scale"].default_value = 0.12; Lk(tc.outputs["Object"], big.inputs["Vector"])
     br = N.new("ShaderNodeMapRange"); br.inputs["To Min"].default_value = 0.82; br.inputs["To Max"].default_value = 1.1
     Lk(big.outputs["Fac"], br.inputs["Value"])
+    dark = op("MULTIPLY", br.outputs["Result"], op("SUBTRACT", 1.0, op("MULTIPLY", sp.outputs["Green"], 0.42)))
     mul = N.new("ShaderNodeMix"); mul.data_type = "RGBA"; mul.blend_type = "MULTIPLY"; mul.inputs["Factor"].default_value = 1.0
-    Lk(mix.outputs[2], mul.inputs[6]); Lk(br.outputs["Result"], mul.inputs[7])
+    Lk(mix.outputs[2], mul.inputs[6]); Lk(dark, mul.inputs[7])
     Lk(mul.outputs[2], bsdf.inputs["Base Color"])
     nmix = N.new("ShaderNodeMix"); nmix.data_type = "RGBA"; Lk(mask, nmix.inputs["Factor"])
     Lk(dn.outputs["Color"], nmix.inputs[6]); Lk(gn.outputs["Color"], nmix.inputs[7])
