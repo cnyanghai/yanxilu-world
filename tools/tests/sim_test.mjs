@@ -8,7 +8,7 @@ import { Grid, roomGrid, canPlace } from "../../world/sim/grid.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const J = (p) => JSON.parse(readFileSync(join(ROOT, "world", "data", p), "utf8"));
-const raw = Object.fromEntries(["objects", "rooms", "vis", "props", "items", "economy", "sound", "tiles"].map((n) => [n, J(n + ".json")]));
+const raw = Object.fromEntries(["objects", "rooms", "vis", "props", "items", "economy", "sound", "tiles", "characters"].map((n) => [n, J(n + ".json")]));
 let fails = 0; const ok = (cond, msg) => { if (!cond) { fails++; console.log("  失败:", msg); } else console.log("  通过:", msg); };
 
 console.log("表");

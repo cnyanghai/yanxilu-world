@@ -33,7 +33,9 @@ const sun = new THREE.DirectionalLight(0xffffff, 1); scene.add(sun, sun.target);
 sun.castShadow = true; sun.shadow.mapSize.setScalar(TIER >= 2 ? 4096 : 2048);
 Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 60 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1); scene.add(hemi);
-const locals = [], glowMats = [], fires = [];
+const locals = [], glowMats = [], fires = [], interact = {};
+/* 交互物件切状态（门：ajar 半开 / open 全开 / closed 关）；现在只换朝向，动画以后接状态机 */
+function setState(id, st) { const it = interact[id], s = it?.I.states?.[st]; if (!s) return false; it.o.quaternion.identity(); it.o.rotation.set(0, deg(s.rotY || 0), 0); return true; }
 function addLight(parent, L) {
   const pl = new THREE.PointLight(new THREE.Color().setRGB(L.color[0], L.color[1], L.color[2], THREE.SRGBColorSpace), 0, 0, 2);
   pl.userData = { power: L.power, periods: L.periods || ["dawn", "day", "dusk", "night"], flicker: L.flicker || 0, seed: Math.random() * 10, base: 0 };
@@ -64,6 +66,7 @@ async function placePrefab(e) {
     applyT(o, c.Transform); o.name = pe.id; root.add(o);
     if (c.Model && c.Model.castShadow === false) o.traverse((m) => { m.castShadow = false; });
     if (c.Light) addLight(o, c.Light);
+    if (c.Interact) interact[pe.id] = { o, I: c.Interact };
   }));
   scene.add(root);
 }
@@ -163,5 +166,18 @@ function gpu() { const g = renderer.getContext(), x = g.getExtension("WEBGL_debu
 function stats() { const i = renderer.info.render; return `档位 ${TIER} · draw call ${i.calls} · 三角面 ${i.triangles.toLocaleString()} · 加载 ${((performance.now() - t0) / 1000).toFixed(1)} 秒 · ${gpu()}`; }
 document.querySelectorAll("[data-period]").forEach((b) => b.addEventListener("click", () => setPeriod(b.dataset.period)));
 document.querySelectorAll("[data-shot]").forEach((b) => b.addEventListener("click", () => setShot(b.dataset.shot)));
-window.__camp = { ready: () => ready, setPeriod, setShot, info: () => ({ ...renderer.info.render, tier: TIER, gpu: gpu() }), scene, renderer };
+/* 人形巡检看图用（tools/tests/camp_shot.py --walk）：1.5 米灰色素模人形、地上一串蓝点标路线；坐标厘米，three 轴向 */
+const figMat = new THREE.MeshStandardMaterial({ color: 0x8f8f8c, roughness: 0.8 });
+function figure(x, z, rotY = 0) {
+  const g = new THREE.Group(), body = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.86, 6, 16), figMat), headM = new THREE.Mesh(new THREE.SphereGeometry(0.165, 20, 14), figMat);
+  body.position.y = 0.16 + 0.43; headM.position.y = 1.5 - 0.165;   /* 胶囊 0 到 1.18 米，头顶 1.5 米 */
+  for (const m of [body, headM]) { m.castShadow = m.receiveShadow = true; g.add(m); }
+  g.position.set(x / 100, 0, z / 100); g.rotation.y = deg(rotY); g.name = "figure"; scene.add(g); return g;
+}
+function path(points) {
+  const geo = new THREE.CircleGeometry(0.05, 12); geo.rotateX(-Math.PI / 2);
+  const im = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ color: 0x3f6fd8 }), points.length), m4 = new THREE.Matrix4();
+  points.forEach((p, i) => im.setMatrixAt(i, m4.makeTranslation(p[0] / 100, 0.02, p[1] / 100))); im.name = "walk-path"; scene.add(im); return im;
+}
+window.__camp = { ready: () => ready, setPeriod, setShot, setState, figure, path, info: () => ({ ...renderer.info.render, tier: TIER, gpu: gpu() }), scene, renderer, camera };
 frame();

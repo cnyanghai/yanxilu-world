@@ -88,7 +88,11 @@ for o in bpy.data.collections["shed"].objects:
     t = {"x": to3(loc)[0], "y": to3(loc)[1], "z": to3(loc)[2], "q": q3(rot)}
     if abs(sc.x - 1) > 1e-4 or abs(sc.y - 1) > 1e-4 or abs(sc.z - 1) > 1e-4:
         t["s"] = [round(sc.x, 4), round(sc.z, 4), round(sc.y, 4)]
-    ents.append({"id": o.name, "components": {"Transform": t, "Model": {"file": o.data.name, "castShadow": True}}})
+    ent = {"id": o.name, "components": {"Transform": t, "Model": {"file": o.data.name, "castShadow": True}}}
+    if o.data.name == "door_leaf":   # 交互物件：摆放半开、走近全开（人形巡检按 walk 状态算，2026-11-05）
+        ent["components"]["Interact"] = {"kind": "door", "default": "ajar", "states": {"ajar": {"rotY": -28}, "open": {"rotY": -90}, "closed": {"rotY": 0}},
+                                         "walk": "open", "note": "门扇是交互物件：摆着是半开（从外面看得见），角色走近推到全开贴内墙；寻路与人形巡检按 walk 指定的状态算"}
+    ents.append(ent)
 lan = bpy.data.objects.get("lantern")
 if lan:
     p = to3(lan.location)

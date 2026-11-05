@@ -44,6 +44,31 @@
      },
      "height": {
       "type": "integer"
+     },
+     "collider": {
+      "type": "object",
+      "required": [
+       "radius",
+       "height",
+       "maxStep"
+      ],
+      "properties": {
+       "radius": {
+        "type": "integer"
+       },
+       "height": {
+        "type": "integer"
+       },
+       "maxStep": {
+        "type": "integer"
+       },
+       "doorClearance": {
+        "type": "number"
+       },
+       "note": {
+        "type": "string"
+       }
+      }
      }
     }
    }

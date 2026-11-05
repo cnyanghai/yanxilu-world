@@ -663,6 +663,23 @@
     "Model": {
      "file": "door_leaf",
      "castShadow": true
+    },
+    "Interact": {
+     "kind": "door",
+     "default": "ajar",
+     "states": {
+      "ajar": {
+       "rotY": -28
+      },
+      "open": {
+       "rotY": -90
+      },
+      "closed": {
+       "rotY": 0
+      }
+     },
+     "walk": "open",
+     "note": "门扇是交互物件：摆着是半开（从外面看得见），角色走近推到全开贴内墙；寻路与人形巡检按 walk 指定的状态算"
     }
    }
   },

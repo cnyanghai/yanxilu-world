@@ -2,7 +2,8 @@
 """营地小试截图（M1 画质门）：起本地模拟服务器，开 /world/camp.html，白天 / 夜晚 × 远景 / 近景 / 细节各一张，量明度。
 真显卡（REVIEW-1 第 5 条）：在 Windows 侧起无头 Chrome（远程调试端口），Playwright 连上去截；连不上就退回本机软件渲染（sw=1，只算功能）。
 WSL 是镜像网络，两边都走 127.0.0.1。截图在 tools/out/camp/。
-用法：python3 tools/tests/camp_shot.py [--sw] [--port 8792]"""
+用法：python3 tools/tests/camp_shot.py [--sw] [--port 8792] [--walk]
+--walk：先跑 node tools/tests/walk_check.mjs，按它的报告把门推开、在门洞 / 屋里 / 檐下 / 篝火边各放一个 1.5 米素模人形、地上画路线，多拍三张（walk_*.png）"""
 import asyncio, json, os, subprocess, sys, time, urllib.request
 import numpy as np
 from PIL import Image
@@ -33,6 +34,8 @@ def win_chrome():
 
 
 async def main():
+    if "--walk" in sys.argv:
+        r = subprocess.run(["node", os.path.join(ROOT, "tools", "tests", "walk_check.mjs"), "camp"], capture_output=True, text=True); print(r.stdout.strip())
     srv = subprocess.Popen([sys.executable, os.path.join(ROOT, "tools", "baba_mock.py"), str(PORT)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     chrome = None
     try:
@@ -59,6 +62,18 @@ async def main():
                 info = await pg.evaluate("window.__camp.info()")
                 st = stats(np.asarray(Image.open(fn).convert("RGB")).astype(np.float32))
                 rows.append((period, shot, info, st, round(time.time() - t, 1)))
+            if "--walk" in sys.argv:
+                W = json.load(open(os.path.join(OUT, "walk_check.json")))
+                door = W["door"]["at"]; dx = sum(p[0] for p in door) / len(door); dz = sum(p[1] for p in door) / len(door)
+                pts = {"门洞": [dx, dz]} | {k: v["path"][-1] for k, v in W["routes"].items() if v}
+                route = (W["routes"].get("屋里") or {}).get("path", []) + (W["routes"].get("篝火边") or {}).get("path", [])
+                await pg.evaluate(f"""(() => {{ const c = window.__camp; c.setState('door', 'open');
+                  for (const p of {json.dumps(list(pts.values()))}) c.figure(p[0], p[1], 200); c.path({json.dumps(route)}); }})()""")
+                for period, shot in (("day", "wide"), ("day", "door"), ("night", "door")):
+                    await pg.evaluate(f"window.__camp.setPeriod('{period}'); window.__camp.setShot('{shot}')"); await pg.wait_for_timeout(900)
+                    fn = os.path.join(OUT, f"walk_{period}_{shot}.png"); await pg.screenshot(path=fn)
+                    st = stats(np.asarray(Image.open(fn).convert("RGB")).astype(np.float32))
+                    rows.append((period, "walk-" + shot, await pg.evaluate("window.__camp.info()"), st, 0))
             if chrome:
                 try: s = await b.new_browser_cdp_session(); await s.send("Browser.close")
                 except Exception: pass

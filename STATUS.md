@@ -2,8 +2,8 @@
 type: status
 status: active
 cluster: product
-stage: M1 进行中，画质门 2026-11-05 已过（营地引擎截图，用户判对照墙分过 3.5）；当前交付物是宋代营地一周小试剩余：人形巡检、1 档优化、PIPELINE 去草案（火焰 2026-11-05 已做）（篝火 2026-11-05 已 Blender 程序建进引擎；Rodin 正规接光挪到营地切片的有机件）
-next: 人形巡检 walk_check → 1 档：半分辨率 + 图集 + 预制体合批（13 MB → 8 MB、190 → 120 draw call）→ PIPELINE 去草案 → M1 收尾，进营地切片
+stage: M1 进行中，画质门 2026-11-05 已过（营地引擎截图，用户判对照墙分过 3.5）；当前交付物是宋代营地一周小试剩余：1 档优化、PIPELINE 去草案（火焰、人形巡检 2026-11-05 已做）（篝火 2026-11-05 已 Blender 程序建进引擎；Rodin 正规接光挪到营地切片的有机件）
+next: 1 档：半分辨率 + 图集 + 预制体合批（13 MB → 8 MB、190 → 120 draw call）→ PIPELINE 去草案 → M1 收尾，进营地切片
 blocked_by: 无（服务器新克隆的每 5 分钟 git pull 由用户照书架那条加）
 updated: 2026-11-05
 ---
@@ -72,6 +72,7 @@ updated: 2026-11-05
 
 ## 日志
 
+- 2026-11-05 人形巡检（用户「做人形巡检」）：tools/tests/walk_check.mjs（Node 18，约 4 秒）读真实模型三角面，2.5 厘米采样算地面、挡身体、头顶净空，按引擎 25 厘米寻路格（world/sim/grid.js）判站立、A* 到 rooms.camp.walk 的四个目标、把每格走一遍，出 JSON 与俯视图；characters 表加 humanoid.collider，rooms 表加 camp.walk 与门洞机位。第一次跑查出门扇半开 28 度把屋里 81 格堵成孤岛 → 门扇加 Interact 三态（ajar / open / closed），寻路按走近推开的 open 算，--as-placed 仍报原样问题；门的开关动画进待办区。结果全过：1993 格全可达、门洞净高 1.95（= 1.5 × 1.3）、路线 531 米；提示灯笼下净空 1.59。camp.js 加 setState、figure、path，camp_shot.py --walk 推门放人形拍图。ASSET-SPEC 10.10、PIPELINE 1.5、技术卡十八
 - 2026-11-05 火焰（用户「做火焰」）：world/render/fire.js 程序化火（交叉竖面 + 噪声火舌、火星点精灵、正对镜头的烟柱），定义 packs/song/vfx/campfire.json，预设 Vfx 实体；按时段 smolder / burn（白天只冒烟）；灯加 flicker（篝火 0.18、灯笼 0.06），灯笼纸自发光跟着晃；光源抬到 80 厘米。调了四轮：亮度 5 时 AgX 压成粉白 → 1.8、火舌顶端被面片切平 → 顶端留余量、光源 35 / 45 / 60 厘米都把柴头照白 → 80。夜晚篝火机位过曝 0、远景死黑 12.8%，多 5 个 draw call。动图 tools/out/camp/campfire_night.gif。ASSET-SPEC 10.9、技术卡十七
 - 2026-11-05 篝火（用户「篝火，我们的 Blender 做不出来吗？」）：kitlib.m_campfire 程序建（12 块熏黑河卵石、7 根劈柴带木茬与烧焦、灰烬、6 块炭夜里自发光），1272 面，0 元；prep 加浅色木茬贴图 firewood；导出入库进 packs/song/prop/campfire，预设加模型实体，camp.js 支持预设模型与炭火自发光，房间表加篝火机位。查出并修了顶点色丢失（导出器无活动颜色属性时写全白 COLOR_0，入库又删了 COLOR_1；屋面旧化之前在引擎里一直没生效），kitlib._active_col + 入库兜底；截图脚本改一次加载（每张重载累积显存，第 7 张起上下文丢失）；篝火光源抬到 55 厘米。数字：白天远景中位 54、最暗 5% 7、夜晚死黑 13.7%。还差火焰特效。ASSET-SPEC 10.8
 - 2026-11-05 用户判营地引擎截图对照墙分过 3.5，M1 画质门过（墙地毯地板明度差一条是书房指标，营地不适用；重烘一条营地无烘焙，整条资产链重跑约 3 分钟）。M1 剩：篝火 Rodin 正规接光、人形巡检、1 档优化、PIPELINE 去草案；篝火报价 Rodin 约 0.4 美元一次，等用户点头

@@ -15,7 +15,14 @@
    "file": "packs/common/skeletons/humanoid.gltf.json",
    "bones": 60,
    "height": 150,
-   "note": "标准人形，Mixamo 兼容命名；暗黑 2 野蛮人 167 骨太多，我们 60 以内"
+   "note": "标准人形，Mixamo 兼容命名；暗黑 2 野蛮人 167 骨太多，我们 60 以内",
+   "collider": {
+    "radius": 20,
+    "height": 150,
+    "maxStep": 20,
+    "doorClearance": 1.3,
+    "note": "人形巡检用（tools/tests/walk_check.mjs，2026-11-05）：碰撞圆柱半径 20 厘米（肩宽约 40）、身高 150、能跨上的台阶 20 厘米；门洞净高至少身高 × 1.3"
+   }
   }
  },
  "fps": 30,

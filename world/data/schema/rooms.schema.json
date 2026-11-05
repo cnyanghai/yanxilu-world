@@ -175,6 +175,40 @@
         ]
        }
       }
+     },
+     "walk": {
+      "type": "object",
+      "required": [
+       "spawn"
+      ],
+      "description": "人形巡检（walk_check.mjs）的出发点与目标点",
+      "properties": {
+       "skeleton": {
+        "type": "string"
+       },
+       "spawn": {
+        "type": "array",
+        "items": {
+         "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+       },
+       "targets": {
+        "type": "object",
+        "additionalProperties": {
+         "type": "array",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 2,
+         "maxItems": 2
+        }
+       },
+       "note": {
+        "type": "string"
+       }
+      }
      }
     }
    }
