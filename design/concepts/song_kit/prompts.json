@@ -1,0 +1,80 @@
+[
+ {
+  "id": "post",
+  "prompt": "A straight square timber post, 16 cm square and 2.4 m tall, aged pine with cracks and soot near the top, plain flat ends, no carving. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "wall_plain",
+  "prompt": "A straight wall panel 2.0 m wide, 2.2 m tall, 12 cm thick: woven bamboo wattle plastered with ochre clay on the upper part, horizontal weathered planks on the lower 60 cm, clay partly flaked to show the weave. The panel has real thickness, no holes, and the back face is equally complete. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "wall_door",
+  "prompt": "The same wattle-and-clay wall panel, 2.0 m wide, 2.2 m tall, 12 cm thick, with a rectangular door opening 0.9 m wide and 1.95 m tall centered and cut fully through, framed by a simple timber door frame; no door leaf inside the opening. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "wall_window",
+  "prompt": "The same wattle-and-clay wall panel, 2.0 m wide, 2.2 m tall, 12 cm thick, with a window opening 0.8 m wide and 0.6 m tall whose sill is 1.0 m above the bottom, filled with vertical square timber bars (zhiling window) with open gaps between them, no glass, no paper. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "beam",
+  "prompt": "A straight horizontal timber beam, 2.0 m long, 16 cm square section, aged pine, plain flat ends. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "gable",
+  "prompt": "A triangular gable infill panel, 2.0 m wide at the base, 1.0 m tall, 12 cm thick, woven bamboo plastered with ochre clay, both faces complete. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "roof_thatch",
+  "prompt": "A rectangular thatched roof section, 2.0 m along the ridge, 1.7 m along the slope, 25 cm thick: thick dense rice straw thatch with no gaps, complete when seen from below, trimmed straight edges on all four sides, tied with bamboo strips. Show front view, side view as a thick slab profile, and a view from below. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, side view, view from directly below. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "ridge",
+  "prompt": "A straight thatch ridge cap, 2.0 m long, 45 cm wide, 30 cm tall: a bundled roll of straw pressed with bamboo poles and rope ties, flat cut ends so pieces join end to end. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "door_leaf",
+  "prompt": "A single rustic door leaf, 0.9 m wide, 1.95 m tall, 5 cm thick: vertical weathered planks with two horizontal battens and a simple wooden latch, hinge side on the left. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "campfire",
+  "prompt": "A campfire ring 1.0 m across and 35 cm tall: a circle of fist-sized river stones blackened by soot around a teepee of split firewood with charred ends, ash on the ground inside. No flames, no smoke, no glow. Orthographic three-view reference sheet of ONE modular game asset for a Song-dynasty rural homestead, matching the reference image's stylized-realistic PBR look. Three views side by side on a pure black background, identical scale, bottoms aligned on one horizontal line: front view, left side view, right side view. Orthographic, no perspective, flat neutral lighting, no cast shadows, no ground plane, no other objects, no text, no labels, no scale bars. Weathered materials with readable wear, slightly desaturated, warm earth tones.",
+  "ratio": "3:2",
+  "ref": true
+ },
+ {
+  "id": "ground_dirt",
+  "prompt": "Seamless tileable top-down texture of compacted farmyard dirt, 2 m by 2 m area, small pebbles, faint footprints and straw bits, warm brown-ochre, even flat lighting, no shadows, no objects, photoreal PBR albedo.",
+  "ratio": "1:1",
+  "ref": false
+ },
+ {
+  "id": "ground_grass",
+  "prompt": "Seamless tileable top-down texture of short trampled meadow grass with patches of dry yellow blades and clover, 2 m by 2 m area, slightly desaturated green, even flat lighting, no shadows, no flowers, photoreal PBR albedo.",
+  "ratio": "1:1",
+  "ref": false
+ },
+ {
+  "id": "ground_stone",
+  "prompt": "Seamless tileable top-down texture of irregular flat grey-blue stepping stones set in dirt with moss in the joints, 2 m by 2 m area, even flat lighting, no shadows, photoreal PBR albedo.",
+  "ratio": "1:1",
+  "ref": false
+ }
+]

@@ -236,3 +236,19 @@ Claude 的观察：没有屋顶的小屋从 40 度俯角能看见书墙、桌、
 - 先 A/B 一件 `wall_door`（最难：要贯通的门洞和厚度）：Rodin（fal，PBR，多图输入，约 0.4 美元）与 Tripo 多视图（fal 上的 v2.5 multiview，带贴图约 0.3 美元；官方 P2.0 要另开账号，多视图每次约 1.1 美元，先不开）。比厚度、门洞是否贯通、四边面、贴图清晰度，定一家。
 - 其余 9 件用胜出的那家，约 3 到 4 美元。
 - 生模合计约 30 元；本节合计约 35 元。
+
+### 10.4 出图结果（2026-11-04）
+
+13 张全出，`concepts/song_kit/`（每件一张 jpg，提示词存 `prompts.json`）；gpt-image-2 中档，13 × 0.376 = 4.9 元（第一轮并发超 10 个被拒 3 张，未计费，重跑）。地面三张已用脚本做成无缝平铺（中心原图、边缘半幅错位混合）。
+
+| 件 | 判定 | 说明 |
+|---|---|---|
+| post / beam / gable / ridge / door_leaf / campfire | 可用 | 比例与禁项都守住；柴门量得约 0.8 × 2.0（要 0.9 × 1.95），导入时按尺寸表缩 |
+| wall_plain | 可用，作墙段的样板 | 竹编抹泥 + 下段木板，泥皮剥落露出编竹，正是要的 |
+| roof_thatch | 可用 | 第三视图是仰视：竹格压草，完整无洞（禁项起作用）；坡长比例约 1.55（要 1.7） |
+| wall_door、wall_window | **不可用，要重出** | 被参考图带偏成院墙：夯土 + 瓦顶 + 石基，和 wall_plain 不是一种墙；门洞量得约 0.65 × 1.65 米，窄且矮（角色要 1.95） |
+| 土 / 草 / 石板 | 可用 | 明度中位 129 / 91 / 117；土偏匀偏橙、要靠印章与贴花破；石板在接缝混合带有重影，当踏步印章用不影响 |
+
+教训：参考图会把同族组件拉向参考图里最像的那件（墙 → 院墙）。同族的第二件起，参考图换成本族已定的样板（wall_door / wall_window 用 wall_plain 做参考），并在提示词里写"no roof tiles, no stone base"。
+
+重出提示词（等用户点头，2 张约 0.75 元，参考图 `song_kit/wall_plain.jpg`）：前缀改为 `Exactly the same wall construction as the reference image: woven bamboo wattle plastered with ochre clay, horizontal weathered planks on the lower 60 cm, no roof tiles on top, no stone base.`，后接原第 3、4 条描述与公共提示词；门洞一条加 `The door opening is tall: 1.95 m of the 2.2 m wall height, and 0.9 m of the 2.0 m width.`
