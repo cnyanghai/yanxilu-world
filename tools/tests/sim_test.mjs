@@ -6,6 +6,8 @@ import { dirname, join } from "node:path";
 import { makeTables, validate } from "../../world/data/tables.js";
 import { Grid, roomGrid, canPlace } from "../../world/sim/grid.js";
 import { Walker, plan, nearestFree, clearLine } from "../../world/sim/walker.js";
+import { layBooks } from "../../world/sim/shelf.js";
+import { BOOKS, DOMAINS } from "../../world/sample.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const J = (p) => JSON.parse(readFileSync(join(ROOT, "world", "data", p), "utf8"));
@@ -73,6 +75,24 @@ console.log("行走（M2 在场）");
   for (let i = 0; i < 400 && w.moving; i++) w.update(0.05);
   ok(Math.hypot(w.pos[0] - p3.at(-1)[0], w.pos[1] - p3.at(-1)[1]) < 1 && arrived === 10, "途中改道：走到新终点，只回调新的那次");
   ok(Math.abs(Math.atan2(Math.sin(w.heading), Math.cos(w.heading))) <= Math.PI, "朝向是有效角度");
+}
+
+console.log("书墙摆书");
+{
+  const shelf = T.objects.bookshelf_wall, L = layBooks(BOOKS, shelf, { domOrder: Object.keys(DOMAINS) }), G = L.grid;
+  ok(L.books.length === BOOKS.length && L.overflow === 0, `${BOOKS.length} 本全部上架（放下 ${L.books.length}，放不下 ${L.overflow}）`);
+  const byCell = {}; for (const b of L.books) (byCell[b.c + "," + b.r] ||= []).push(b);
+  ok(Object.values(byCell).every((bs) => new Set(bs.map((b) => b.dom)).size === 1), "一格只放一个领域");
+  const doms = Object.keys(DOMAINS).filter((d) => BOOKS.some((b) => b.dom === d));
+  ok(doms.every((d) => new Set(L.books.filter((b) => b.dom === d).map((b) => b.c)).size === 1), "一个领域占一列");
+  ok(Object.values(byCell).every((bs) => bs.length >= 2), "没有一本单占一格（每格至少两本）");
+  const cellOf = (b) => G.cells[b.r * G.cols + b.c];
+  ok(L.books.every((b) => { const c = cellOf(b); return b.x - b.w / 2 >= c.x0 - 0.01 && b.x + b.w / 2 <= c.x1 && b.y - b.h / 2 >= c.y0 - 0.01 && b.y + b.h / 2 <= c.y1 - 1; }), "每本都在自己的格里（不出侧板、不顶上层板）");
+  ok(Object.values(byCell).every((bs) => bs.every((b, k) => !k || b.x - b.w / 2 >= bs[k - 1].x + bs[k - 1].w / 2 - 0.01)), "同格的书左右不重叠");
+  ok(L.books.filter((b) => b.state === "在读").every((b) => b.out === 3) && L.books.filter((b) => b.state !== "在读").every((b) => b.out === 0), "在读的抽出 3 厘米，其余齐平");
+  const rows = new Set(L.books.map((b) => b.r)), eye = [...rows].map((r) => 10 + (G.rows - 1 - r) * G.rh + G.rh / 2);
+  ok(eye.every((y) => Math.abs(y - 130) < 80), `书都在视线高附近的层（层中心 ${eye.map((y) => Math.round(y)).join("、")} 厘米）`);
+  ok(JSON.stringify(layBooks(BOOKS, shelf, { domOrder: Object.keys(DOMAINS) }).books) === JSON.stringify(L.books), "重开摆法不变（确定的伪随机）");
 }
 
 console.log(fails ? `失败 ${fails} 项` : "全部通过"); process.exit(fails ? 1 : 0);

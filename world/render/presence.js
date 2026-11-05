@@ -62,6 +62,7 @@ export class Presence {
     this.dom.addEventListener("pointerup", (e) => {
       if (!down || !this.enabled) return; const d = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
       if (d > 8 || dt > 600) return;   /* 拖动、长按不算点 */
+      if (this.onTap && this.onTap(e.clientX, e.clientY)) return;   /* 点到物件（对焦站的书墙等）由 render/focus.js 接走 */
       const p = this.floorAt(e.clientX, e.clientY); if (p) this.walkTo(p[0], p[1]);
     });
     this.dom.addEventListener("wheel", (e) => { if (!this.enabled) return; e.preventDefault(); this.setZoom(e.deltaY < 0 ? 1 : 0); }, { passive: false });
@@ -96,12 +97,20 @@ export class Presence {
     this.az += da * kz; this.pitch += (zg.pitch - this.pitch) * kz; this.frameH += (zg.frameH - this.frameH) * kz; this.dist = this.distFor(this.zi);
     const want = new THREE.Vector3(this.walker.pos[0] / 100, 0.9, this.walker.pos[1] / 100), k = this.snap ? 1 : 1 - Math.exp(-dt * 3.2);
     this.target.lerp(want, k); this.distNow += (this.dist - this.distNow) * (this.snap ? 1 : 1 - Math.exp(-dt * 4)); this.snap = false;
-    const a = deg(this.az), e = deg(this.pitch), back = this.camera.aspect >= 1.6 ? 1 : Math.min(1.6, Math.sqrt(1.6 / this.camera.aspect));   /* 竖屏退一些（跟着人走，不必看全房；退满 1.6 / 宽高比 时房子太小） */
-    const d = this.distNow * back;
-    this.camera.position.copy(this.target).add(new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).multiplyScalar(d));
-    this.camera.lookAt(this.target);
+    const P = this.followPose(); this.camera.position.copy(P.pos); this.camera.lookAt(P.target);
     if (Math.abs(this.camera.fov - this.fov) > 1e-3) this.camera.fov = this.fov;
-    this.camera.near = Math.max(0.2, d - 12); this.camera.far = d + 30; this.camera.updateProjectionMatrix();
+    this.camera.near = Math.max(0.2, P.dist - 12); this.camera.far = P.dist + 30; this.camera.updateProjectionMatrix();
+  }
+  /* 跟随镜头此刻该在的位置（不推进）：对焦站出站时缓动回这里 */
+  followPose() {
+    const a = deg(this.az), e = deg(this.pitch), back = this.camera.aspect >= 1.6 ? 1 : Math.min(1.6, Math.sqrt(1.6 / this.camera.aspect));   /* 竖屏退一些（跟着人走，不必看全房；退满 1.6 / 宽高比 时房子太小） */
+    const d = this.distNow * back, pos = this.target.clone().add(new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).multiplyScalar(d));
+    return { pos, target: this.target.clone(), fov: this.fov, dist: d };
+  }
+  /* 角色透明度（对焦站里淡出，不挡书） */
+  setFigureOpacity(o) {
+    const m = this.fig.userData.body.material; if (Math.abs((m.userData.o ?? 1) - o) < 1e-3) return; m.userData.o = o;
+    m.transparent = o < 0.999; m.opacity = o; m.depthWrite = o > 0.5; this.fig.visible = o > 0.02;
   }
   /* 墙透：镜头到角色头、胸两条射线，挡住的墙段淡到 0.15，其余回到不透明 */
   wallFade(dt) {

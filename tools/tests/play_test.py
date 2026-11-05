@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """M2 功能用例（在场）：开 /world/play.html?room=study，用真显卡（Windows Chrome 远程调试，连不上退回软件渲染）把角色走一圈并截图。
 场地是院子连书房（rooms.yard，2026-11-05 扩成宋代院落：书房北、茅草偏屋东、篝火院心偏东）。
+书墙对焦站：停在触发格进站、书名可读、指 / 点书出题签、竖屏拖动平移、Esc / 回到书房按钮 / 浏览器后退 / 点空处出站、在房里点书先走过去再进站。
 每一步都断言：走到了没有、墙透了没有、镜头分区切了没有、门推开了没有、绕没绕开篝火、有没有控制台报错；
 开头先和人形巡检对账：游戏里按真实模型算出的寻路格阻挡，与 tools/tests/walk_check.mjs yard 的结果逐格相同。截图在 tools/out/play/。
 用法：python3 tools/tests/play_test.py [--sw] [--port 8797]
@@ -34,6 +35,8 @@ def win_chrome():
 
 ROOMS = {r["id"]: r for r in json.load(open(os.path.join(ROOT, "world", "data", "rooms.json"), encoding="utf-8"))["rooms"]}
 YARD_AZ, STUDY_AZ = ROOMS["yard"]["follow"]["az"], ROOMS["study"]["follow"]["az"]
+SHELF = ROOMS["study"]["stations"]["shelf"]
+CHAR_PX = 10   # 书名一个字至少 10 像素（设备像素，截图 1 倍）算读得出；study-plan 第 4 节原写 OCR 读出 ≥ 8 / 10，这里先用字的像素大小代
 FIRE = next([e["components"]["Transform"]["x"], e["components"]["Transform"]["z"]] for e in json.load(open(os.path.join(ROOT, "world", "data", "presets", "yard.json"), encoding="utf-8"))["entities"] if e["id"] == "campfire")
 
 
@@ -84,6 +87,44 @@ async def main():
                     return best
                 p = await S(0, -100); info, meta = await walk(*p)   # 书墙站触发格（rooms.study.stations.shelf.trigger）
                 ok(near(info, p), f"[{label}] 走到书墙站 {info and info['pos']}，用时 {meta and meta[1]} 秒，折点 {meta and len(meta[0])}")
+                # ---- 书墙对焦站（M2 第 3 天）：走到触发格停下就进站 ----
+                FI = "window.__play.focus.info()"
+                try: await pg.wait_for_function(f"{FI}.state === 'in'", timeout=6000)
+                except Exception: pass
+                fi = await pg.evaluate(FI)
+                ok(fi["state"] == "in" and fi["id"] == "shelf" and abs(fi["fov"] - SHELF["fov"]) < 0.1, f"[{label}] 停在书墙前就进书墙站：{fi['state']} {fi['id']}，视场角 {fi['fov']}；淡出挡书的家具 {fi['occluded']}")
+                await shot("02_shelf_station")
+                L = await pg.evaluate("window.__play.focus.legibility()"); vis = [x for x in L if x["vis"]]; cs = sorted(x["char"] for x in vis)
+                good = sum(1 for c in cs if c >= CHAR_PX)
+                ok(vis and good >= 0.8 * len(vis), f"[{label}] 书名可读：画面里 {len(vis)} 本，字 ≥ {CHAR_PX} 像素的 {good} 本（最小 {cs and cs[0]}、中位 {cs and cs[len(cs) // 2]} 像素）")
+                books = await pg.evaluate("window.__play.focus.books()")
+                pick = next((x["i"] for x in vis if books[x["i"]]["state"] == "在读"), vis[len(vis) // 2]["i"] if vis else 0); xy = await pg.evaluate(f"window.__play.focus.screen({pick})")
+                if label == "mobile": await pg.touchscreen.tap(*xy)
+                else: await pg.mouse.move(*xy)
+                await pg.wait_for_timeout(500); tg = await pg.evaluate("window.__play.focus.tag()") or ""
+                ok(books[pick]["title"] in tg, f"[{label}] {'点' if label == 'mobile' else '指'}到一本书浮出题签：{tg.replace(chr(10), ' · ')}（{books[pick]['title']}）")
+                await shot("02_book")
+                if label == "mobile":   # 竖屏：左右拖动沿墙平移
+                    await pg.mouse.move(300, 420); await pg.mouse.down(); await pg.mouse.move(200, 420, steps=6); await pg.mouse.move(120, 420, steps=6); await pg.mouse.up(); await pg.wait_for_timeout(300)
+                    fi = await pg.evaluate(FI); ok(fi["state"] == "in" and fi["pan"][0] > 0.2, f"[{label}] 竖屏拖动沿墙平移：平移 {fi['pan']} 米，仍在站里")
+                    await shot("02_pan"); await pg.click("#back")      # 手机用"回到书房"按钮出站
+                else: await pg.keyboard.press("Escape")
+                await pg.wait_for_timeout(1700); fi = await pg.evaluate(FI); pr = await pg.evaluate("window.__play.presence()")
+                ok(fi["state"] == "follow" and abs(fi["fov"] - 20) < 0.1 and not fi["occluded"], f"[{label}] {'回到书房按钮' if label == 'mobile' else 'Esc'} 出站：{fi['state']}，视场角 {fi['fov']}，家具还原 {not fi['occluded']}")
+                q = await S(100, 25); await walk(*q)               # 站开一点，再点书墙上的一本书：先走过去，进站后指到那本
+                pick2 = vis[0]["i"] if vis else 0; xy = await pg.evaluate(f"window.__play.focus.screen({pick2})")
+                if label == "mobile": await pg.touchscreen.tap(*xy)
+                else: await pg.mouse.click(*xy)
+                try: await pg.wait_for_function(f"{FI}.state === 'in'", timeout=12000); await pg.wait_for_timeout(300)
+                except Exception: pass
+                fi = await pg.evaluate(FI); tg = await pg.evaluate("window.__play.focus.tag()") or ""
+                ok(fi["state"] == "in" and fi["select"] == pick2 and books[pick2]["title"] in tg, f"[{label}] 在房里点书墙上的书：走过去进站并指到那本（{fi['state']}，选中 {fi['select']} / {pick2}，题签 {tg.split(chr(10))[0]}）")
+                await pg.evaluate("history.back()"); await pg.wait_for_timeout(1700); fi = await pg.evaluate(FI)
+                ok(fi["state"] == "follow", f"[{label}] 浏览器后退出站：{fi['state']}")
+                await pg.evaluate("window.__play.focus.enter('shelf')"); await pg.wait_for_function(f"{FI}.state === 'in'", timeout=5000)
+                if label == "mobile": await pg.touchscreen.tap(195, 150)
+                else: await pg.mouse.click(800, 120)              # 点书墙上方的空格子
+                await pg.wait_for_timeout(1700); fi = await pg.evaluate(FI); ok(fi["state"] == "follow", f"[{label}] 点空处出站：{fi['state']}")
                 await shot("02_shelf")
                 q = await S(150, 125); await pg.evaluate(f"window.__play.walkTo({q[0]}, {q[1]})"); await pg.wait_for_timeout(600)
                 p = await S(-175, 75); info, meta = await walk(*p)  # 途中改道：桌子左前

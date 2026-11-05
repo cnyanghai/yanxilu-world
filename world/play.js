@@ -15,6 +15,9 @@ import { Composite } from "./render/post.js";
 import { Fire, flicker } from "./render/fire.js";
 import { buildShell, greyBox, slotBoxes } from "./render/shell.js";
 import { Presence } from "./render/presence.js";
+import { buildBookshelf } from "./render/shelf.js";
+import { Focus } from "./render/focus.js";
+import { BOOKS, DOMAINS } from "./sample.js";
 import { siteOf, siteGrid, siteParts } from "./sim/site.js";
 import { rasterize, stamp, blockBits } from "./sim/collide.js";
 
@@ -92,6 +95,8 @@ async function placeModel(e, parent = scene, roomId = ROOM_ID) {
       o.scale.set(asset.fit.includes("w") ? fp.w / 100 / sz.x : sy, sy, asset.fit.includes("d") ? fp.d / 100 / sz.z : sy); b.setFromObject(o);
       o.position.set((t.x || 0) / 100 - (b.min.x + b.max.x) / 2, (t.y || 0) / 100 - b.min.y, (t.z || 0) / 100 - (b.min.z + b.max.z) / 2);
     } else applyT(o, c.Transform);
+  } else if (obj?.data?.layout === "cubbies") {   /* 书墙：程序化格子架 + 按数据摆的书（render/shelf.js；数据现在是 sample.js，接 Baba 后换 S.data） */
+    const api = buildBookshelf(obj, BOOKS, DOMAINS); o = api.group; applyT(o, c.Transform); shelves[e.id] = api;
   } else if (file === "shell:door") { return null;   /* 门：壳里已开门洞（近墙压低），不出灰盒挡镜头 */
   } else { o = greyBox(c.Data?.object || e.id, obj); applyT(o, c.Transform); }
   o.name = e.id; parent.add(o); props3d[e.id] = o;
@@ -99,7 +104,7 @@ async function placeModel(e, parent = scene, roomId = ROOM_ID) {
   if (c.Light && !c.Light.fromObject) addLight(o, c.Light);
   return o;
 }
-const props3d = {}, objLights = {};
+const props3d = {}, objLights = {}, shelves = {};
 /* 物件自带的灯（objects 表 light）：瓦数按 vis 的 physical.lights[实体 id]，亮不亮按 localLights */
 function addObjLight(o, id, def, roomId) {
   const col = new THREE.Color(def.color), dist = (def.distance || 4);
@@ -254,6 +259,9 @@ if (ROOM.follow && !Q.get("shot")) {
   presence = new Presence({ scene, camera, dom: canvas, grid, room: ROOM, walls: [...shells.flatMap((s) => s.walls), ...tall], spawn: ROOM.walk?.spawn && ROOM === SITE ? ROOM.walk.spawn : door,
     base: { id: SITE.id, ...view(SITE.follow || ROOM.follow) }, zones });
 }
+/* 对焦站：各房间 stations 里有 trigger 的（书墙站先做；笔记本架、案头站接上内容后同法） */
+const focusStations = PARTS.flatMap(({ room, off }) => Object.entries(room.stations || {}).filter(([, d]) => d.trigger && d.at && d.frame).map(([id, def]) => ({ id, def, off, room: room.id, content: shelves[def.entity] || null })));
+const focus = presence && focusStations.length ? new Focus({ camera, presence, dom: canvas, stations: focusStations, ui: { back: document.getElementById("back"), tag: document.getElementById("tag") }, occluders: Object.values(props3d) }) : null;
 /* 寻路网盖上按真实模型算的挡路（world/sim/collide.js，人形巡检同一份）：收集不占槽位的实体的三角面（场地坐标，米），交互物件按 Interact.walk 的状态 */
 function buildNav(grid) {
   const t0 = performance.now(), C = T.raw.characters.skeletons.humanoid.collider, col = { height: C.height / 100, radius: C.radius / 100, maxStep: C.maxStep / 100 };
@@ -299,6 +307,7 @@ function frame() {
   renderer.info.reset();
   const now = performance.now(), dt = Math.min(0.1, (now - last) / 1000); last = now; elapsed += dt; const t = elapsed;
   if (presence) { presence.update(dt); doorsUpdate(dt); }
+  if (focus) focus.update(dt);
   for (const f of fires) f.update(t, camera, renderer.domElement.height);
   for (const l of locals) if (l.userData.flicker && l.userData.base) l.intensity = l.userData.base * (1 + l.userData.flicker * flicker(t, l.userData.seed));
   for (const m of glowMats) if (m.userData.base) m.emissiveIntensity = m.userData.base * (1 + 0.06 * flicker(t, 3.3));
@@ -332,6 +341,15 @@ function at(roomId, x, z) { const p = PARTS.find((q) => q.room.id === roomId) ||
 window.__play = window.__camp = { ready: () => ready, room: ROOM_ID, site: SITE.id, at, setPeriod, setShot, setState, figure, path, follow,
   walkTo: (x, z) => presence?.walkTo(x, z), presence: () => presence?.info() || null,
   doors: () => doors.map((d) => ({ id: d.o.name, ang: +d.ang.toFixed(1) })),
+  focus: focus && { info: () => focus.info(), enter: (id, b = -1) => focus.enter(id, b), exit: () => focus.exit(),
+    books: () => Object.values(shelves)[0]?.layout.books.map((b) => ({ i: b.i, title: b.title, dom: b.dom, state: b.state, cell: [b.c, b.r] })) || [],
+    tag: () => { const t = document.getElementById("tag"); return t.hidden ? null : t.innerText; },
+    /* 某本书书脊中心的屏幕坐标（页面像素）；whole：书墙中心 */
+    screen: (i) => { const sh = Object.values(shelves)[0]; if (!sh) return null; const v = i === "whole" ? sh.face().center : sh.anchor(i).add(new THREE.Vector3(0, -sh.layout.books[i].h / 200, 0)); const p = v.project(camera); return [(p.x + 1) / 2 * innerWidth, (1 - p.y) / 2 * innerHeight]; },
+    /* 可读性：每本书脊在屏幕上的宽与一个字的高（像素，按设备像素） */
+    legibility: () => { const sh = Object.values(shelves)[0], dpr = renderer.getPixelRatio(); return sh.layout.books.map((b, i) => { const c = sh.spineCorners(i).map((v) => v.project(camera)), w = Math.abs(c[1].x - c[0].x) / 2 * renderer.domElement.width, h = Math.abs(c[2].y - c[1].y) / 2 * renderer.domElement.height, G = sh.glyph(i);
+      const vis = c.every((p) => Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1);   /* 整本在画面里 */
+      return { i, w: +w.toFixed(1), charW: +(w * G.w).toFixed(1), charH: +(h * G.h).toFixed(1), char: +Math.min(w * G.w, h * G.h).toFixed(1), vis, dpr }; }); } },
   nav: () => nav && { cols: nav.grid.cols, rows: nav.grid.rows, cell: nav.grid.cell, bits: blockBits(nav.grid), items: nav.items, tris: nav.tris, ms: nav.ms, bySlotOrWall: nav.bySlotOrWall, byModel: nav.byModel },
   info: () => ({ ...renderer.info.render, tier: TIER, gpu: gpu(), texLo: TEX_LO, bytes: bytes(), files: performance.getEntriesByType("resource").length }), scene, renderer, camera };
 frame();

@@ -17,7 +17,7 @@
 
 - `world/`：小世界（WebGL，three.js 0.186 自带在 `world/vendor/three/`（字体在 `world/vendor/fonts/`，`world/` 自成一体，线上靠书架克隆里的一个 `world` 链接即可），importmap 引用，不打包不引框架不走 CDN）。`index.html` 外壳与 HUD，`world.js` 全部逻辑，`sample.js` 样例数据，`assets/` 是 Blender 烘焙的壳，`packs/<包>/<类>/<id>/` 一件资产一个目录加定义 JSON。按反引号键或 `?dev=1` 开「工坊」面板。
 - `world/data/`：九张表（objects、rooms、vis、props、items、economy、sound、tiles、characters）+ `presets/`（实体-组件预设）+ `schema/`（draft-07）。单位厘米整数。代码只读表：`world/data/tables.js`。`world/sim/grid.js` 格子与寻路，`world/render/{post,tiers}.js` 合成后期与硬件分档。
-- `world/play.js`：实时光照的房间运行时（`?room=`，读 rooms / presets / vis 搭场景）；`world/camp.html` 是营地小试（宋代包，资产在 `world/packs/song/`），`world/play.html` 是 M2 在场（默认书房：`render/shell.js` 按瓦片表出壳与灰盒、`render/presence.js` 素模人形点地走路 / 跟随镜头 / 墙透、`sim/walker.js` 行走逻辑、`sim/site.js` 院子套书房合成一块场地、`sim/walls.js` 墙块、`sim/collide.js` 按真实模型挡路（游戏与人形巡检同一份））。院子（`rooms.yard` + `presets/yard.json`）是 12 × 12 米的宋代院落：书房北、茅草偏屋东、篝火院心偏东，地面与散布由 `tools/song_yard.py` 按布局生成。
+- `world/play.js`：实时光照的房间运行时（`?room=`，读 rooms / presets / vis 搭场景）；`world/camp.html` 是营地小试（宋代包，资产在 `world/packs/song/`），`world/play.html` 是 M2 在场（默认书房：`render/shell.js` 按瓦片表出壳与灰盒、`render/presence.js` 素模人形点地走路 / 跟随镜头 / 墙透、`sim/walker.js` 行走逻辑、`sim/site.js` 院子套书房合成一块场地、`sim/walls.js` 墙块、`sim/collide.js` 按真实模型挡路（游戏与人形巡检同一份）、`sim/shelf.js` + `render/shelf.js` 书墙格子架与按数据摆书、`render/focus.js` 对焦站进出与镜头缓动）。院子（`rooms.yard` + `presets/yard.json`）是 12 × 12 米的宋代院落：书房北、茅草偏屋东、篝火院心偏东，地面与散布由 `tools/song_yard.py` 按布局生成。
 - `room/`：CSS 3D 书房样机（早期），版本 2 第 3 步后归档。`studies/`：临摹练习。
 - `tools/`：`asset_import.py`（资产入库一条命令）、`asset_shrink.py`、`fal_image3d.py`（Rodin）、`paint_texture.py`、`tables_check.py`（Schema + 交叉引用 + 格子校验，**测试前置**）、`d2_decode.py`（暗黑 2 图像格式，仅本机研究）、`blender/`（`study_scene.py` 场景、`bake_study.py` 烘焙、`bake.sh` 一键，优先 Windows 侧 Blender 4.5 显卡）、`baba_mock.py`（本地模拟 Baba 静态与接口）、`tests/`（`world_test.py` 四景别三种光截图、`paint_verify.py`、`sim_test.mjs`）。
 - `tools/out/`：全部本机产物（截图、解包、研究），gitignore。`tools/out/d2r_local/` 是暗黑 2 的研究产物目录（排练结论已写进 REHEARSAL.md，2026-11-05 M1 收尾时已删；再研究时仍只许放这里，用 `tools/d2_decode.py` 从本机游戏文件重解），永不入库，`tables_check` 会拦任何引用它的已跟踪文件。
@@ -33,7 +33,7 @@ bash tools/blender/bake.sh                 # 重新烘焙壳（约 10 分钟，�
 python3 tools/tests/camp_shot.py           # 营地真显卡截图（Windows Chrome 远程调试；--sw 软件渲染；--tier N、--mobile 手机竖屏），白天 / 夜晚 × 四机位 + 明度 + 下载量与 draw call
 node tools/tests/walk_check.mjs camp        # 人形巡检（门洞净高、走得到、无孤岛），出俯视图；yard 巡检院子连书房
 python3 tools/song_yard.py                 # 院子布局改了以后重出地面分层图与散布表
-python3 tools/tests/play_test.py           # M2 功能用例（在场：走路、改道、墙透、进偏屋、绕篝火、镜头分区、手机；开头与人形巡检逐格对账），真显卡
+python3 tools/tests/play_test.py           # M2 功能用例（在场：走路、改道、墙透、书墙对焦站进出与书名可读、进偏屋、绕篝火、镜头分区、手机；开头与人形巡检逐格对账），真显卡
 bash tools/vendor_min.sh                   # three 换版本后重出压缩版（系统 terser）
 ```
 Windows 上 `python3` 换 `python`。截图在 `tools/out/`。gltf-transform 要 node ≥ 22（`~/.nvm/versions/node/v24*`）。

@@ -20,15 +20,24 @@ html,body{margin:0;height:100%;background:#17110C;color:#EDE0C4;font:14px/1.5 "N
 #hud b{font-weight:600;margin-right:6px}
 #st{position:fixed;left:12px;bottom:10px;font-size:12px;opacity:.75}
 body.shot #hud,body.shot #st{display:none}
+#back{position:fixed;left:12px;bottom:64px;font:inherit;color:#EDE0C4;background:rgba(23,17,12,.82);border:1px solid #7E5A1E;border-radius:4px;padding:4px 12px;cursor:pointer;z-index:4}
+#tag{position:fixed;z-index:5;pointer-events:none;background:rgba(243,221,185,.96);color:#182121;border:1px solid #7E5A1E;border-radius:3px;padding:6px 12px 7px;box-shadow:0 2px 10px rgba(0,0,0,.35);max-width:60vw;white-space:nowrap}
+#tag b{display:block;font-size:17px;font-weight:700;letter-spacing:.04em}
+#tag small{display:block;font-size:12px;opacity:.72}
+body[data-focus] #hint{display:none}
+body:not([data-focus]) #hint2{display:none}
 </style>
 </head>
 <body data-room="study">
 <canvas id="gl"></canvas>
 <div id="hud"><b>在场 · 书房</b>
   <button data-period="day">白天</button><button data-period="night">夜晚</button>
-  <span style="opacity:.75">点地面走过去 · 滚轮或双指放大</span>
+  <span id="hint" style="opacity:.75">点地面走过去 · 点书墙去书墙前 · 滚轮或双指放大</span>
+  <span id="hint2" style="opacity:.75">指到或点一本书看书名 · 点空处或 Esc 回去</span>
 </div>
 <div id="st">加载中…</div>
+<button id="back" hidden>← 回到书房</button>
+<div id="tag" hidden><b></b><small></small></div>
 <script>if(/[?&]shot=/.test(location.search)&&/[?&]clean=1/.test(location.search))document.body.classList.add("shot");</script>
 <script type="module" src="./play.js"></script>
 </body>
