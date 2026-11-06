@@ -7,7 +7,7 @@
      同格相邻两本明暗错开（render 层按 k 的奇偶上色）；
    - 在读的书抽出 3 厘米；偶尔一本斜靠在前一本上（不放在格的第一本）。
    书的尺寸按 id 取确定的伪随机，重开页面摆法不变。 */
-export const SHELF = { side: 3, top: 4, plinth: 10, board: 2.5, div: 2, back: 1.5, setback: 1.5 };
+export const SHELF = { side: 3.5, top: 5, plinth: 10, board: 3, div: 2.5, back: 1.5, setback: 1.5 };   /* 板厚（厘米）：厚板圆边（风格圣经），2026-11-05 画质研究由 2.5 / 2 加厚 */
 
 /* 格子窝：[{ c, r, x0, x1, y0（格底板上沿）, y1, cx }]，r = 0 是最上层 */
 export function cubbies(obj) {

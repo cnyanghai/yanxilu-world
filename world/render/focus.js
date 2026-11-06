@@ -24,18 +24,27 @@ export class Focus {
   /* 站的触发点（场地厘米） */
   trigger(st) { return [st.def.trigger.x + st.off[0], st.def.trigger.z + st.off[1]]; }
   rayAt(cx, cy) { const r = this.dom.getBoundingClientRect(); this.ray.setFromCamera(new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1), this.camera); return this.ray; }
+  /* 取景框：frame.fit = "content" 时按站内容（书墙上有书的格子）加边距取景，夹在 minW / minH 与整框之间；否则整框。米，世界坐标 */
+  frameOf(st) {
+    const d = st.def, fr = d.frame || { w: 380, h: 250, portraitW: 120 }, ax = (d.at.x + st.off[0]) / 100, ay = d.at.y / 100, cb = fr.fit === "content" ? st.content?.content?.() : null;
+    if (!cb) return { w: fr.w / 100, h: fr.h / 100, cx: ax, cy: ay, fw: fr.w / 100, fh: fr.h / 100, ax, ay };
+    const m = (fr.margin ?? 12) / 100, cl = THREE.MathUtils.clamp;
+    return { w: cl(cb.w + 2 * m, (fr.minW ?? 160) / 100, fr.w / 100), h: cl(cb.h + 2 * m, (fr.minH ?? 120) / 100, fr.h / 100), cx: cb.center.x, cy: cb.center.y, fw: fr.w / 100, fh: fr.h / 100, ax, ay };
+  }
   /* 站的机位：{ pos, target, fov } */
   pose(st, pan = this.pan) {
-    const d = st.def, a = this.camera.aspect, fr = d.frame || { w: 380, h: 250, portraitW: 120 }, fov = d.fov ?? 14;
-    const frameH = (a >= 1 ? Math.max(fr.h, fr.w / a) : Math.max(fr.portraitW / a, 0)) / 100;
+    const d = st.def, a = this.camera.aspect, fr = d.frame || { portraitW: 120 }, F = this.frameOf(st), fov = d.fov ?? 14;
+    const frameH = a >= 1 ? Math.max(F.h, F.w / a) : (fr.portraitW ?? 120) / 100 / a;
     const dist = frameH / 2 / Math.tan(deg(fov) / 2), az = deg(d.az ?? 0), el = deg(d.pitch ?? 12);
-    const target = new THREE.Vector3((d.at.x + st.off[0]) / 100 + pan.x, d.at.y / 100 + pan.y, (d.at.z + st.off[1]) / 100);
+    const target = new THREE.Vector3(F.cx + pan.x, F.cy + pan.y, (d.at.z + st.off[1]) / 100);
     const pos = target.clone().add(new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(dist));
     return { pos, target, fov, frameH, dist };
   }
+  /* 平移范围：画面不出整框（整面书墙）；返回 [xmin, xmax, ymin, ymax]（相对取景中心） */
   panLimit(st) {
-    const P = this.pose(st, new THREE.Vector2()), fr = st.def.frame || { w: 380, h: 250 }, visW = P.frameH * this.camera.aspect;
-    return [Math.max(0, (fr.w / 100 - visW) / 2), Math.max(0, (fr.h / 100 - P.frameH) / 2)];
+    const P = this.pose(st, new THREE.Vector2()), F = this.frameOf(st), visW = P.frameH * this.camera.aspect, lx = Math.max(0, (F.fw - visW) / 2), ly = Math.max(0, (F.fh - P.frameH) / 2);
+    const ox = F.ax - F.cx, oy = F.ay - F.cy;
+    return [Math.min(0, ox - lx), Math.max(0, ox + lx), Math.min(0, oy - ly), Math.max(0, oy + ly)];
   }
   enter(id, select = -1) {
     const st = this.stations.find((s) => s.id === id); if (!st || this.state === "in" || this.state === "entering") return false;
@@ -92,8 +101,8 @@ export class Focus {
       if (this.state !== "in") return;
       if (down) {   /* 拖动：沿墙平移（竖屏或画面装不下时） */
         const dx = e.clientX - down.x, dy = e.clientY - down.y; if (Math.hypot(dx, dy) > 8) drag = true;
-        if (drag) { const P = this.pose(this.cur, new THREE.Vector2()), r = this.dom.getBoundingClientRect(), mpp = P.frameH / r.height, [lx, ly] = this.panLimit(this.cur);
-          this.pan.set(THREE.MathUtils.clamp(down.px - dx * mpp, -lx, lx), THREE.MathUtils.clamp(down.py + dy * mpp, -ly, ly)); }
+        if (drag) { const P = this.pose(this.cur, new THREE.Vector2()), r = this.dom.getBoundingClientRect(), mpp = P.frameH / r.height, [x0, x1, y0, y1] = this.panLimit(this.cur);
+          this.pan.set(THREE.MathUtils.clamp(down.px - dx * mpp, x0, x1), THREE.MathUtils.clamp(down.py + dy * mpp, y0, y1)); }
         return;
       }
       if (e.pointerType === "mouse") this.setHover(this.cur.content?.pick ? this.cur.content.pick(this.rayAt(e.clientX, e.clientY)) : -1);
@@ -145,6 +154,11 @@ export class Focus {
       const dist = pos.distanceTo(target); this.camera.near = Math.max(0.2, dist - 12); this.camera.far = dist + 30; this.camera.updateProjectionMatrix();
       if (this.t >= 1 && this.state === "entering") { this.state = "in"; if (this.select >= 0) this.setHover(this.select, true); }
       if (this.t >= 1 && this.state === "leaving") { this.state = "follow"; this.cur = null; if (pr) pr.enabled = true; this.wasMoving = false; this.restoreOccluders(); }
+    }
+    /* 读书灯：进站亮起、出站熄灭（灯一直在场景里，只改强度，免得着色器重编译卡一下） */
+    for (const st of this.stations) if (st.light) {
+      const goal = st === this.cur && (this.state === "entering" || this.state === "in") ? 1 : 0, k = st.light.userData.k ?? 0, nk = k + (goal - k) * (1 - Math.exp(-dt * 3.5));
+      st.light.userData.k = nk; st.light.intensity = st.light.userData.power * nk;
     }
     /* 挡书的家具：进站淡到 0.18、出站淡回 */
     if (this.faded.length) { const g = this.state === "leaving" || this.state === "follow" ? 1 : 0.18; this.fadeK += (g - this.fadeK) * (1 - Math.exp(-dt * 6)); for (const m of this.faded) { m.material.opacity = this.fadeK; m.material.depthWrite = this.fadeK > 0.9; } }

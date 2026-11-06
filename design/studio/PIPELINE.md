@@ -65,7 +65,7 @@
 
 ## 7. 工具清单
 
-在用：tables_check、sim_test、walk_check、play_test、song_yard（院子分层图与散布）、measure、camp_shot、world_test、asset_import（家具模式 + 组件模式）、asset_shrink、vendor_min、`tools/blender/song_kit/`（prep_textures、materials、kitlib、lineup、shed、scatter、camp_props、light、export_kit）、`tools/blender/mcp_call.py`（直连 Blender 窗口）、bake.sh（书房烘焙）、fal_image3d、paint_verify、d2_decode（研究用）。
+在用：tables_check、sim_test、walk_check、play_test、song_yard（院子分层图与散布）、spine_atlas（书脊底图集）、measure、camp_shot、world_test、asset_import（家具模式 + 组件模式）、asset_shrink、vendor_min、`tools/blender/song_kit/`（prep_textures、materials、kitlib、lineup、shed、scatter、camp_props、light、export_kit）、`tools/blender/mcp_call.py`（直连 Blender 窗口）、bake.sh（书房烘焙）、fal_image3d、paint_verify、d2_decode（研究用）。
 没有的：摆放编辑器、状态机与时间线播放器、图集打包、镂空率量尺、环境图烘焙。
 
 ## 8. 踩过的坑（排练 + 营地小试）

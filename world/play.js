@@ -96,7 +96,7 @@ async function placeModel(e, parent = scene, roomId = ROOM_ID) {
       o.position.set((t.x || 0) / 100 - (b.min.x + b.max.x) / 2, (t.y || 0) / 100 - b.min.y, (t.z || 0) / 100 - (b.min.z + b.max.z) / 2);
     } else applyT(o, c.Transform);
   } else if (obj?.data?.layout === "cubbies") {   /* 书墙：程序化格子架 + 按数据摆的书（render/shelf.js；数据现在是 sample.js，接 Baba 后换 S.data） */
-    const api = buildBookshelf(obj, BOOKS, DOMAINS); o = api.group; applyT(o, c.Transform); shelves[e.id] = api;
+    const api = await buildBookshelf(obj, BOOKS, DOMAINS, { books: "./packs/modern/books/", wood: "./packs/modern/tex/oak_veneer_", texURL }); o = api.group; applyT(o, c.Transform); shelves[e.id] = api;
   } else if (file === "shell:door") { return null;   /* 门：壳里已开门洞（近墙压低），不出灰盒挡镜头 */
   } else { o = greyBox(c.Data?.object || e.id, obj); applyT(o, c.Transform); }
   o.name = e.id; parent.add(o); props3d[e.id] = o;
@@ -260,7 +260,14 @@ if (ROOM.follow && !Q.get("shot")) {
     base: { id: SITE.id, ...view(SITE.follow || ROOM.follow) }, zones });
 }
 /* 对焦站：各房间 stations 里有 trigger 的（书墙站先做；笔记本架、案头站接上内容后同法） */
-const focusStations = PARTS.flatMap(({ room, off }) => Object.entries(room.stations || {}).filter(([, d]) => d.trigger && d.at && d.frame).map(([id, def]) => ({ id, def, off, room: room.id, content: shelves[def.entity] || null })));
+const focusStations = PARTS.flatMap(({ room, off }) => Object.entries(room.stations || {}).filter(([, d]) => d.trigger && d.at && d.frame).map(([id, def]) => ({ id, def, off, room: room.id, content: shelves[def.entity] || null, light: stationLight(def.light, off) })));
+/* 对焦站的读书灯（rooms 表 stations.<站>.light）：进站时亮起、出站熄灭，由 render/focus.js 控制强度；书墙在北墙阴影里，没有它站里中位明度只有 16 */
+function stationLight(L, off) {
+  if (!L) return null; const s = new THREE.SpotLight(new THREE.Color(L.color || "#ffe9cc"), 0, (L.distance || 800) / 100, deg(L.angle || 40), L.penumbra ?? 0.8, 2);
+  s.position.set((L.x + off[0]) / 100, L.y / 100, (L.z + off[1]) / 100); s.target.position.set((L.at.x + off[0]) / 100, L.at.y / 100, (L.at.z + off[1]) / 100);
+  s.castShadow = TIER >= 2 && !!L.shadow; s.shadow.mapSize.setScalar(1024); s.shadow.bias = -0.0005; s.shadow.normalBias = 0.02; s.userData.power = L.intensity ?? 40;
+  scene.add(s, s.target); return s;
+}
 const focus = presence && focusStations.length ? new Focus({ camera, presence, dom: canvas, stations: focusStations, ui: { back: document.getElementById("back"), tag: document.getElementById("tag") }, occluders: Object.values(props3d) }) : null;
 /* 寻路网盖上按真实模型算的挡路（world/sim/collide.js，人形巡检同一份）：收集不占槽位的实体的三角面（场地坐标，米），交互物件按 Interact.walk 的状态 */
 function buildNav(grid) {
